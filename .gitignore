@@ -1,0 +1,17 @@
+vendor/
+models/
+backbone/
+data/
+tb_logs/
+lightning_logs/
+notebooks/*.png
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+web/node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+.DS_Store
