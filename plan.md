@@ -269,7 +269,7 @@ Run: `pytest -q && ruff check pipeline && mypy`. Expected: `1 passed`, lint clea
   - `data/svs/{ldem_4.tif, lroc_color_16bit_srgb_4k.tif}`
   - the verified CLI flag set that Task 3 reuses
 
-- [ ] **Step 1: Write `scripts/fetch_data.sh`**
+- [x] **Step 1: Write `scripts/fetch_data.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -297,7 +297,7 @@ echo "fetch OK"
 ```
 Run: `bash scripts/fetch_data.sh`. Expected: `fetch OK` (~2.2 GB total).
 
-- [ ] **Step 2: Write `scripts/m0_benchmark.sh`**
+- [x] **Step 2: Write `scripts/m0_benchmark.sh`**
 
 ```bash
 #!/usr/bin/env bash
@@ -314,12 +314,12 @@ END=$(date +%s)
 echo "elapsed_s=$((END-START)) patches=25" | tee -a data/m0_test.log
 ```
 
-- [ ] **Step 3: Run it.** `bash scripts/m0_benchmark.sh`.
+- [x] **Step 3: Run it.** `bash scripts/m0_benchmark.sh`.
   - If jsonargparse rejects `backbone_checkpoint_path null`: run `hf download nasa-ibm-ai4science/NASA-IBM-Lunar-Foundation-Model backbone/checkpoint.pt --local-dir .` (2.4 GB), remove that flag, and re-run. The fine-tuned checkpoint's weights overwrite the backbone.
   - If `--custom_modules_path` is rejected: run the command from `vendor/ni-lfm` with absolute overrides (`--data.init_args.{train,val,test,predict}_data_root`, `…_label_data_root`, `…_split`) pointing at `~/NASA_proj/data/prospectivity_dataset`.
   - Update both scripts to the flag set that worked. Task 3 reuses it.
 
-- [ ] **Step 4: Gate.** Record in `docs/benchmarks.md`: test RMSE, MAE, R², elapsed seconds, seconds per patch, peak RAM (Activity Monitor), torch/terratorch versions, and the flag set used.
+- [x] **Step 4: Gate.** ✅ **Result (2026-09-24): PASS**: RMSE 0.0277, R² 0.990, ≈5.8 s/patch, 5.1 GB peak RAM (see `docs/benchmarks.md`). The working flag set is `scripts/cpu_config.sh` plus the downloaded `backbone/checkpoint.pt`, because the ckpt's saved hparams override any config edit. Record in `docs/benchmarks.md`: test RMSE, MAE, R², elapsed seconds, seconds per patch, peak RAM (Activity Monitor), torch/terratorch versions, and the flag set used.
   - **PASS:** RMSE ≤ 0.035 (card: 0.0293 ± 0.0013) **and** ≤ 30 s/patch.
   - **FAIL on accuracy:** stop and re-plan (likely wrong modalities or normalisation).
   - **FAIL on speed only:** tell the user, then run Task 3 once on free Colab and copy `data/derived/pred_tiles` back.
@@ -579,11 +579,10 @@ def pole_of(patch_id: str) -> Pole:
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p data/derived/pred_tiles
-time terratorch predict -c models/ice/config.yaml \
+source scripts/cpu_config.sh
+time terratorch predict -c "$CPU_CONFIG" \
   --ckpt_path models/ice/ni_lfm_ps8_all_modalities_s42.ckpt \
-  --custom_modules_path vendor/ni-lfm/terratorch_integration \
-  --trainer.accelerator cpu --trainer.devices 1 \
-  --model.init_args.model_args.backbone_checkpoint_path null \
+  --trainer.devices 1 \
   --predict_output_dir data/derived/pred_tiles
 ls data/derived/pred_tiles/*_pred.tif | wc -l
 ```

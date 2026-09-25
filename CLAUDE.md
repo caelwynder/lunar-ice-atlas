@@ -59,7 +59,8 @@ None have been run yet. These are the proposed M0 steps; update this section onc
 - Node: **24.21.0 via Homebrew** (`brew install node@24`, linked to /opt/homebrew/bin, which comes before the old v19 in /usr/local/bin).
 - Env (done 2026-09-24): `conda create -n ni-lfm python=3.12 -y && conda activate ni-lfm && pip install -e vendor/ni-lfm && pip install pyproj shapely pyogrio pytest ruff mypy && pip install -e .`. Installed: torch 2.12.1, terratorch 1.2.13, rasterio 1.5.1, huggingface-hub 1.33.0.
 - Download: `hf download nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model --local-dir models/ice`, then `hf download nasa-ibm-ai4science/Sombench-Ice-Prospectivity-Regression --repo-type dataset --local-dir data/prospectivity_dataset`
-- CPU eval: `bash scripts/m0_benchmark.sh` (also needs `--custom_modules_path vendor/ni-lfm/terratorch_integration`; see plan.md Task 1)
+- Data: `conda run --no-capture-output -n ni-lfm bash scripts/fetch_data.sh` (~4.6 GB including the required 2.4 GB `backbone/checkpoint.pt`).
+- CPU eval (verified 2026-09-24, RMSE 0.0277, ~2.5 min): `conda run --no-capture-output -n ni-lfm bash scripts/m0_benchmark.sh`. It sources `scripts/cpu_config.sh`, which writes `models/ice/config_cpu.yaml`.
 - Web dev/build/test/lint: TBD (after `web/` is scaffolded)
 - Python tests/lint/typecheck: `conda run -n ni-lfm pytest -q` (add `-m data` once data is fetched), `conda run -n ni-lfm ruff check pipeline`, `conda run -n ni-lfm mypy`
 

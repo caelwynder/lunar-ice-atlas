@@ -1,0 +1,24 @@
+# Benchmarks
+
+## M0: ice-prospectivity test split on CPU (2026-09-24)
+
+Machine: Apple M1 Pro (10 CPU cores), 16 GB RAM, no GPU/MPS. Env: Python 3.12.14, torch 2.12.1, terratorch 1.2.13.
+Command: `bash scripts/m0_benchmark.sh` (25 held-out test patches, `accelerator: cpu`).
+
+| Metric | Measured | Model card |
+|---|---|---|
+| test/RMSE | **0.02773** | 0.0293 ± 0.0013 |
+| test/MAE | 0.01847 | 0.0197 ± 0.0009 |
+| test/R2 | 0.98963 | 0.9884 ± 0.0010 |
+| Wall time | 145 s total (≈5.8 s/patch including model load) | n/a |
+| Peak RSS | 5.1 GB | n/a |
+
+Gate: PASS (RMSE ≤ 0.035 and ≤ 30 s/patch). All inference stays local on CPU; no Colab needed.
+
+### Flag set that works
+- `scripts/cpu_config.sh` derives `models/ice/config_cpu.yaml` (sets `accelerator: cpu` and
+  `custom_modules_path: vendor/ni-lfm/terratorch_integration`).
+- `backbone/checkpoint.pt` (2.4 GB) **must be downloaded**. LightningCLI re-applies the hyperparameters
+  saved in the `.ckpt`, and those point at that path, so neither a config edit nor
+  `--model.init_args.model_args.backbone_checkpoint_path null` can remove it. Its weights are then
+  overwritten by the fine-tuned checkpoint's `state_dict`.
