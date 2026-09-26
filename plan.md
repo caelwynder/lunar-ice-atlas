@@ -1797,7 +1797,7 @@ export function vec3ToLatLon(x: number, y: number, z: number): { lat: number; lo
   - `interface LoadedGlobe { meta: GlobeMeta; heights: ValueGrid; url(file: string): string }`
   - `loadPole(base, pole)`, `loadGlobe(base)`, `loadRegions(base)`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests** (plus `src/data/load.test.ts`, added 2026-09-25: it runs `loadPole`/`loadGlobe`/`loadRegions` against the real `web/public/data` files via a stubbed `fetch`, and checks that a 404 becomes a `DataError` naming the URL)
 
 `src/data/grid.test.ts`:
 
@@ -1885,9 +1885,9 @@ it('accepts nulls in stats and requires outline points', () => {
 });
 ```
 
-- [ ] **Step 2: Run them.** `npm test`. Expected: FAIL (modules missing).
+- [x] **Step 2: Run them.** `npm test`. Expected: FAIL (modules missing).
 
-- [ ] **Step 3: Implement `grid.ts`**
+- [x] **Step 3: Implement `grid.ts`**
 
 ```ts
 export type Decoder = (raw: number) => number | null;
@@ -1941,7 +1941,7 @@ export class ValueGrid {
 }
 ```
 
-- [ ] **Step 4: Implement `schema.ts`** (hand-written guards; no runtime dependency)
+- [x] **Step 4: Implement `schema.ts`** (hand-written guards; no runtime dependency)
 
 ```ts
 import type { Pole, PsParams } from '../geo/polarStereo';
@@ -2061,7 +2061,7 @@ export function parseGlobeMeta(json: unknown): GlobeMeta {
 }
 ```
 
-- [ ] **Step 5: Implement `regionsSchema.ts`**
+- [x] **Step 5: Implement `regionsSchema.ts`**
 
 ```ts
 import { DataError, arr, num, obj, str } from './schema';
@@ -2110,7 +2110,7 @@ export function parseRegions(json: unknown): RegionsDoc {
 }
 ```
 
-- [ ] **Step 6: Implement `load.ts`**
+- [x] **Step 6: Implement `load.ts`**
 
 ```ts
 import type { Pole } from '../geo/polarStereo';
@@ -2156,9 +2156,9 @@ export const loadRegions = async (base: string): Promise<RegionsDoc> =>
   parseRegions(await getJson(`${base}data/regions.json`));
 ```
 
-- [ ] **Step 7: Run everything.** `npm test && npm run typecheck && npm run lint`. Expected: PASS. Run `npx prettier --write src` first if prettier complains about the formatting of the code above.
+- [x] **Step 7: Run everything.** ✅ 27 tests pass (11 new), typecheck and lint clean after `prettier --write`. `npm test && npm run typecheck && npm run lint`. Expected: PASS. Run `npx prettier --write src` first if prettier complains about the formatting of the code above.
 
-- [ ] **Step 8: Commit (ask first).** `feat(web): typed data contract, loaders and value grids`
+- [x] **Step 8: Commit (ask first).** `feat(web): typed data contract, loaders and value grids`
 
 ---
 
