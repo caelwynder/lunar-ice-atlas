@@ -1,0 +1,99 @@
+:root {
+  --surface: #1a1a19;
+  --text: #ffffff;
+  --text-2: #c3c2b7;
+  --focus: #cde2fb;
+  --accent: #eda100;
+  --bg: #0b0b0c;
+  --panel-w: 320px;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+#moon {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+#moon:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+#status {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
+  padding: 12px 16px;
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 8px;
+}
+
+#panel {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: var(--panel-w);
+  max-height: calc(100% - 32px);
+  overflow-y: auto;
+  background: var(--surface);
+  border-radius: 8px;
+}
+
+#panel:empty,
+#readout:empty {
+  display: none;
+}
+
+#readout {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  padding: 8px 12px;
+  background: var(--surface);
+  color: var(--text-2);
+  border-radius: 8px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  #panel {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: auto;
+    max-height: 45%;
+    border-radius: 12px 12px 0 0;
+  }
+}

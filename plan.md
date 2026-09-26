@@ -2397,7 +2397,7 @@ PS x/y mirrors between the poles, so the winding differs: `flip` is set for the 
   - `createAtlasScene(canvas: HTMLCanvasElement, globe: LoadedGlobe, poles: LoadedPole[], opts: { exaggeration: number }): AtlasScene`
   - `interface AtlasScene { setLayer(layerId: string | null): void; setTestOutline(on: boolean): void; setOpacity(v: number): void; flyTo(lat: number, lon: number, altitude: number): void; pick(ndcX: number, ndcY: number): PickResult | null; addRegionOutlines(doc: RegionsDoc): void; highlightRegion(id: string | null): void; dispose(): void }`
 
-- [ ] **Step 1: Write the failing test** `src/scene/picking.test.ts`
+- [x] **Step 1: Write the failing test** `src/scene/picking.test.ts` (`out.uv?.[0]` instead of `out.uv![0]`, because lint forbids non-null assertions)
 
 ```ts
 import { expect, it } from 'vitest';
@@ -2437,9 +2437,9 @@ it('returns nothing equatorward of the cap or on the other hemisphere', () => {
 ```
 Why row 0, col 0: u = 302,136.24 / 610,713.6 = 0.4947 and v = (802,136.24 − 500,000) / 610,713.6 = 0.4947. The pole lands just inside the upper-left cell because the grid is offset toward +x/−y (addendum §3).
 
-- [ ] **Step 2: Run it.** Expected: FAIL (module missing).
+- [x] **Step 2: Run it.** Expected: FAIL (module missing).
 
-- [ ] **Step 3: Implement `picking.ts`**
+- [x] **Step 3: Implement `picking.ts`**
 
 ```ts
 import type { LoadedPole } from '../data/load';
@@ -2465,9 +2465,9 @@ export function lookupValues(pole: LoadedPole, lat: number, lon: number): PickVa
 }
 ```
 
-- [ ] **Step 4: Run it.** Expected: PASS.
+- [x] **Step 4: Run it.** Expected: PASS.
 
-- [ ] **Step 5: Implement `scene.ts`.** The pieces below all go in one file (target ≤ 300 lines; split `regionsLayer.ts` out if it grows past that), with each function under 50 lines:
+- [x] **Step 5: Implement `scene.ts`.** ✅ **Deviations (2026-09-25):** (a) `pick` does **not** raycast the meshes. Measured on the real geometry, a mesh raycast costs 19 ms/pick (over a 60 fps frame), too slow for hover. Instead `raySurface` (in `picking.ts`, tested) intersects the ray with a sphere and refines the radius from the terrain height 6 times, which takes microseconds and lands on the displaced surface. (b) Region outlines are split into `regionsLayer.ts`, and `LIFT_M` is 500 m (not 150), because at 6× the terrain poked through 1 km outline segments on the massifs. (c) **Antimeridian seam fix:** `ValueGrid.bilinear(u, v, wrapX)` wraps columns, so lon ±180 sample the same height, and `buildGlobeGeometry` averages the duplicate seam normals (`weldSeamNormals`). Both are tested. (d) The fly-to animation runs inside the render loop (controls are disabled while flying) instead of a separate rAF. The pieces below all go in one file (target ≤ 300 lines; split `regionsLayer.ts` out if it grows past that), with each function under 50 lines:
   - **`createRenderer(canvas)`:**
     - `new THREE.WebGLRenderer({ canvas, antialias: true })`, `outputColorSpace = THREE.SRGBColorSpace`, `setPixelRatio(Math.min(devicePixelRatio, 2))`, clear colour `#0b0b0c`.
   - **`createCamera()`:**
@@ -2514,7 +2514,7 @@ material.onBeforeCompile = (shader) => {
     - A `ResizeObserver` on the canvas parent updates the renderer size and camera aspect.
   - **`dispose()`:** stops the loop, disconnects the observer, and disposes geometries, materials and cached textures.
 
-- [ ] **Step 6: Implement `main.ts`, the stub `ui/layers.ts`, and `index.html`**
+- [x] **Step 6: Implement `main.ts`, the stub `ui/layers.ts`, and `index.html`**
 
 `src/ui/layers.ts` (stub, replaced in Task 13):
 
@@ -2576,7 +2576,7 @@ void start();
 ```
 `styles.css` defines tokens (`--surface: #1a1a19; --text: #ffffff; --text-2: #c3c2b7; --focus: #cde2fb; --accent: #eda100`) with the canvas full-viewport and the panel docked right (a bottom sheet under 700 px wide).
 
-- [ ] **Step 7: Run tests, then look at it.** Run `npm test && npm run typecheck && npm run lint && npm run dev` and open http://localhost:5173. Check by eye:
+- [x] **Step 7: Run tests, then look at it.** ✅ 41 tests pass. Screenshots come from headless Chromium via Playwright (SwiftShader) in `docs/img/task12_*.jpg`: (a) ✅ relief, with Mare Orientale correctly at 95°W; (b) ✅ no crack or z-fighting at 80°; (d) ✅ the crescent is empty; (e) ✅ all 9 outlines are closed after the lift fix. **Known cosmetic issue:** the globe shows radial streaks between ~60° and 80°, inherent to the equirectangular LROC/LOLA sources (pixels ~0.5 km wide × 2.7 km tall at 80°). It could be softened later by tapering exaggeration toward the caps. Run `npm test && npm run typecheck && npm run lint && npm run dev` and open http://localhost:5173. Check by eye:
   - (a) The globe is textured with visible relief.
   - (b) Both caps meet the globe at ~80° with no crack, z-fighting or hard tone step while orbiting.
   - (c) Cap relief lines up with LROC colour features at the rim (e.g. the Shackleton/de Gerlache area).
@@ -2585,7 +2585,7 @@ void start();
 
   Tune the overlap, `polygonOffset` or fill-light intensity if needed. **Screenshot both poles and show the user.**
 
-- [ ] **Step 8: Commit (ask first).** `feat(web): render displaced globe with polar caps and picking`
+- [x] **Step 8: Commit (ask first).** `feat(web): render displaced globe with polar caps and picking`
 
 ---
 

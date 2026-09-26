@@ -15,7 +15,7 @@ export interface GlobeOptions {
 }
 
 export function equirectHeightAt(grid: ValueGrid): (lat: number, lon: number) => number {
-  return (lat, lon) => grid.bilinear((lon + 180) / 360, (90 - lat) / 180) ?? 0;
+  return (lat, lon) => grid.bilinear((lon + 180) / 360, (90 - lat) / 180, true) ?? 0;
 }
 
 function gridIndex(cols: number, rows: number): number[] {
@@ -28,6 +28,20 @@ function gridIndex(cols: number, rows: number): number[] {
     }
   }
   return index;
+}
+
+/** Lon -180 and +180 are duplicate vertices; give both the average normal so no shading line shows. */
+function weldSeamNormals(g: THREE.BufferGeometry, cols: number, rows: number): void {
+  const n = g.getAttribute('normal');
+  const avg = new THREE.Vector3();
+  for (let j = 0; j <= rows; j++) {
+    const a = j * (cols + 1);
+    const b = a + cols;
+    avg.set(n.getX(a) + n.getX(b), n.getY(a) + n.getY(b), n.getZ(a) + n.getZ(b)).normalize();
+    n.setXYZ(a, avg.x, avg.y, avg.z);
+    n.setXYZ(b, avg.x, avg.y, avg.z);
+  }
+  n.needsUpdate = true;
 }
 
 export function buildGlobeGeometry(o: GlobeOptions): THREE.BufferGeometry {
@@ -47,5 +61,6 @@ export function buildGlobeGeometry(o: GlobeOptions): THREE.BufferGeometry {
   g.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
   g.setIndex(gridIndex(o.lonSegments, o.latSegments));
   g.computeVertexNormals();
+  weldSeamNormals(g, o.lonSegments, o.latSegments);
   return g;
 }

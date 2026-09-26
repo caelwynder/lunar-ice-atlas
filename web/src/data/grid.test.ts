@@ -20,3 +20,10 @@ it('bilinear falls back to nearest next to nodata', () => {
   const full = new ValueGrid(2, 1, Uint8Array.from([0, 254]), decodeU8(0, 1));
   expect(full.bilinear(0.5, 0.5)).toBeCloseTo(0.5, 6);
 });
+
+it('bilinear can wrap horizontally so both edges blend the first and last columns', () => {
+  const ring = new ValueGrid(2, 1, Uint8Array.from([0, 254]), decodeU8(0, 10));
+  expect(ring.bilinear(0, 0.5, true)).toBeCloseTo(5, 6);
+  expect(ring.bilinear(1, 0.5, true)).toBeCloseTo(5, 6);
+  expect(ring.bilinear(0.25, 0.5, true)).toBeCloseTo(0, 6);
+});

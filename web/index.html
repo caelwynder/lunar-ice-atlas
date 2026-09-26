@@ -6,6 +6,13 @@
     <title>Lunar Ice Atlas</title>
   </head>
   <body>
-    <div id="app"></div>
+    <main class="app">
+      <canvas id="moon" aria-label="Interactive 3D Moon showing ice prospectivity at the poles"></canvas>
+      <p id="status" aria-live="polite"></p>
+      <aside id="panel" aria-label="Map controls"></aside>
+      <div id="readout" aria-live="polite"></div>
+      <dialog id="about" aria-labelledby="about-title"></dialog>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

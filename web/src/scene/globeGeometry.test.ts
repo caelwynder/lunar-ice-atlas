@@ -58,3 +58,26 @@ it('reads the real SVS heights with the right orientation (known landmarks)', as
   expect(heightAt(-70.4, -172.4)).toBeLessThan(-8_500); // Antoniadi crater, South Pole–Aitken basin
   expect(heightAt(33, -16)).toBeLessThan(-1_500); // Mare Imbrium lowlands
 });
+
+it('closes the antimeridian seam: matching positions and normals at lon -180 and +180', () => {
+  const heights = new ValueGrid(4, 2, Int16Array.from([0, 3000, 6000, 9000, 1000, 2000, 3000, 4000]), decodeI16);
+  const lonSegments = 8;
+  const g = buildGlobeGeometry({
+    latLimitDeg: 60,
+    lonSegments,
+    latSegments: 4,
+    heightAt: equirectHeightAt(heights),
+    exaggeration: 6,
+  });
+  const p = g.getAttribute('position');
+  const n = g.getAttribute('normal');
+  for (let row = 0; row <= 4; row++) {
+    const a = row * (lonSegments + 1);
+    const b = a + lonSegments;
+    for (const attr of [p, n]) {
+      expect(attr.getX(a)).toBeCloseTo(attr.getX(b), 6);
+      expect(attr.getY(a)).toBeCloseTo(attr.getY(b), 6);
+      expect(attr.getZ(a)).toBeCloseTo(attr.getZ(b), 6);
+    }
+  }
+});
