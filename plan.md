@@ -252,7 +252,7 @@ def test_package_imports() -> None:
 ```
 Run: `pytest -q && ruff check pipeline && mypy`. Expected: `1 passed`, lint clean.
 
-- [ ] **Step 7: Commit (ask first).** `chore: bootstrap pipeline package and tooling`
+- [x] **Step 7: Commit (ask first).** `chore: bootstrap pipeline package and tooling`
 
 ---
 
@@ -324,7 +324,7 @@ echo "elapsed_s=$((END-START)) patches=25" | tee -a data/m0_test.log
   - **FAIL on accuracy:** stop and re-plan (likely wrong modalities or normalisation).
   - **FAIL on speed only:** tell the user, then run Task 3 once on free Colab and copy `data/derived/pred_tiles` back.
 
-- [ ] **Step 5: Commit (ask first).** `chore: add data fetch and M0 CPU benchmark`
+- [x] **Step 5: Commit (ask first).** `chore: add data fetch and M0 CPU benchmark`
 
 ---
 
@@ -344,7 +344,7 @@ echo "elapsed_s=$((END-START)) patches=25" | tee -a data/m0_test.log
   - `write_ps_fixtures(path: Path) -> None`
   - All constants in `constants.py` (below)
 
-- [ ] **Step 1: Write the failing tests** `pipeline/tests/test_crs.py`
+- [x] **Step 1: Write the failing tests** `pipeline/tests/test_crs.py`
 
 ```python
 import math
@@ -395,9 +395,9 @@ def test_cap_rho_matches_grid_edge() -> None:
     assert cap_rho_m(80.0) == pytest.approx(500_000 - 197_863.76, abs=60)  # grid starts at the 80° circle
 ```
 
-- [ ] **Step 2: Run the tests.** `pytest pipeline/tests/test_crs.py -q`. Expected: FAIL with `ModuleNotFoundError: No module named 'atlas.constants'`.
+- [x] **Step 2: Run the tests.** `pytest pipeline/tests/test_crs.py -q`. Expected: FAIL with `ModuleNotFoundError: No module named 'atlas.constants'`.
 
-- [ ] **Step 3: Implement `constants.py`**
+- [x] **Step 3: Implement `constants.py`**
 
 ```python
 from pathlib import Path
@@ -427,7 +427,7 @@ ARTEMIS_DIR = DATA_DIR / "artemis"
 WEB_DATA_DIR = ROOT / "web" / "public" / "data"
 ```
 
-- [ ] **Step 4: Implement `crs.py`**
+- [x] **Step 4: Implement `crs.py`**
 
 ```python
 import math
@@ -473,9 +473,9 @@ def cap_rho_m(lat_deg: float) -> float:
     return 2 * MOON_RADIUS_M * ICE_K0 * math.tan(math.radians(45 - abs(lat_deg) / 2))
 ```
 
-- [ ] **Step 5: Run the tests.** `pytest pipeline/tests/test_crs.py -q`. Expected: `6 passed`. If `test_south_lon0_points_up_and_lon90_points_right` fails, **stop**: the orientation assumption is wrong, and the web math in Task 9 depends on it.
+- [x] **Step 5: Run the tests.** `pytest pipeline/tests/test_crs.py -q`. Expected: `6 passed`. If `test_south_lon0_points_up_and_lon90_points_right` fails, **stop**: the orientation assumption is wrong, and the web math in Task 9 depends on it.
 
-- [ ] **Step 6: Implement `fixtures.py`** (web tests compare against pyproj) and run it
+- [x] **Step 6: Implement `fixtures.py`** (web tests compare against pyproj) and run it
 
 ```python
 import json
