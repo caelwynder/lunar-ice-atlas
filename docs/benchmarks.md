@@ -22,3 +22,21 @@ Gate: PASS (RMSE ≤ 0.035 and ≤ 30 s/patch). All inference stays local on CPU
   saved in the `.ckpt`, and those point at that path, so neither a config edit nor
   `--model.init_args.model_args.backbone_checkpoint_path null` can remove it. Its weights are then
   overwritten by the fine-tuned checkpoint's `state_dict`.
+
+## Task 3: predictions for all 162 polar patches (2026-09-25)
+
+Command: `bash scripts/predict_all.sh` → `data/derived/pred_tiles/<patch>_ASP_SIN_COS_pred.tif` (162 files, float32,
+256×256, nodata −1, same CRS/geotransform as the input patch).
+
+| Measure | Value |
+|---|---|
+| Wall time | 802 s (13.4 min), ≈4.9 s/patch |
+| Peak RSS | 5.1 GB |
+| RMSE, train split (108 patches) | 0.0264 |
+| RMSE, val split (23) | 0.0283 |
+| RMSE, test split (25) | **0.0277** (identical to M0, so predict and test preprocessing match) |
+| RMSE, all 81 north patches | 0.0298 |
+| RMSE, all 81 south patches | 0.0236 |
+
+RMSE is computed only where the `PRO` label exists (inside the 80° circle). The small train/test gap (0.0264 vs
+0.0277) means showing predictions on training patches is not badly flattering, but the UI still reports test RMSE only.

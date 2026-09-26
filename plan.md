@@ -505,7 +505,7 @@ if __name__ == "__main__":
 ```
 Run: `python -m atlas.fixtures && head -8 web/src/geo/__fixtures__/ps_points.json`. Expected: a JSON array of 8 rows.
 
-- [ ] **Step 7:** Run `ruff check pipeline && mypy`, then **commit (ask first)**: `feat(pipeline): lunar polar-stereographic CRS helpers and web fixtures`
+- [x] **Step 7:** Run `ruff check pipeline && mypy`, then **commit (ask first)**: `feat(pipeline): lunar polar-stereographic CRS helpers and web fixtures`
 
 ---
 
@@ -521,7 +521,7 @@ Run: `python -m atlas.fixtures && head -8 web/src/geo/__fixtures__/ps_points.jso
   - `pole_of(patch_id: str) -> Pole`
   - `data/derived/pred_tiles/<patch_id>_ASP_SIN_COS_pred.tif` (162 files, float32)
 
-- [ ] **Step 1: Write the failing tests** `pipeline/tests/test_tiles.py`
+- [x] **Step 1: Write the failing tests** `pipeline/tests/test_tiles.py`
 
 ```python
 import pytest
@@ -547,9 +547,9 @@ def test_pole_of() -> None:
     assert pole_of("patch_0001_0002_80N") == "north"
 ```
 
-- [ ] **Step 2: Run them.** `pytest pipeline/tests/test_tiles.py -q`. Expected: FAIL (`No module named 'atlas.tiles'`).
+- [x] **Step 2: Run them.** `pytest pipeline/tests/test_tiles.py -q`. Expected: FAIL (`No module named 'atlas.tiles'`).
 
-- [ ] **Step 3: Implement the top of `tiles.py`**
+- [x] **Step 3: Implement the top of `tiles.py`**
 
 ```python
 import re
@@ -570,9 +570,9 @@ def pole_of(patch_id: str) -> Pole:
     return "south" if patch_id.endswith("_80S") else "north"
 ```
 
-- [ ] **Step 4: Run the tests.** Expected: `4 passed`.
+- [x] **Step 4: Run the tests.** Expected: `4 passed`.
 
-- [ ] **Step 5: Write `scripts/predict_all.sh`**, using the flag set verified in Task 1, then run it
+- [x] **Step 5: Write `scripts/predict_all.sh`**, using the flag set verified in Task 1, then run it
 
 ```bash
 #!/usr/bin/env bash
@@ -588,7 +588,7 @@ ls data/derived/pred_tiles/*_pred.tif | wc -l
 ```
 Expected: `162`. Runtime ≈ 162 × (s/patch from M0). If the suffix `ls` shows isn't `_ASP_SIN_COS_pred.tif`, change `PRED_SUFFIX` in `constants.py` to match.
 
-- [ ] **Step 6: Verify the outputs.** Append to `test_tiles.py` and run `pytest -m data -q pipeline/tests/test_tiles.py`:
+- [x] **Step 6: Verify the outputs.** ✅ 162 files; test RMSE 0.0277 (= M0); 13.4 min total. See `docs/benchmarks.md` and `docs/task-3-explained.md`. Append to `test_tiles.py` and run `pytest -m data -q pipeline/tests/test_tiles.py`:
 
 ```python
 import numpy as np
