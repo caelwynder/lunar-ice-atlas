@@ -62,6 +62,7 @@ None have been run yet. These are the proposed M0 steps; update this section onc
 - Data: `conda run --no-capture-output -n ni-lfm bash scripts/fetch_data.sh` (~4.6 GB including the required 2.4 GB `backbone/checkpoint.pt`).
 - CPU eval (verified 2026-09-24, RMSE 0.0277, ~2.5 min): `conda run --no-capture-output -n ni-lfm bash scripts/m0_benchmark.sh`. It sources `scripts/cpu_config.sh`, which writes `models/ice/config_cpu.yaml`.
 - Web dev/build/test/lint: TBD (after `web/` is scaffolded)
+- Build web assets (verified 2026-09-25, ~2 min, 36.7 MB): `conda run --no-capture-output -n ni-lfm python -m atlas.build {globe|north|south|regions|all}` → `web/public/data/`. Visual QA: `conda run -n ni-lfm python notebooks/qa_plot.py` → `notebooks/qa_south.png`.
 - Python tests/lint/typecheck: `conda run -n ni-lfm pytest -q` (add `-m data` once data is fetched), `conda run -n ni-lfm ruff check pipeline`, `conda run -n ni-lfm mypy`
 
 ## Constraints

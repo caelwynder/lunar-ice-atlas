@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "height": {
+    "file": "height.i16.bin",
+    "width": 1440,
+    "height": 720,
+    "units": "m"
+  },
+  "color": {
+    "hi": "color_4k.jpg",
+    "lo": "color_2k.jpg"
+  }
+}

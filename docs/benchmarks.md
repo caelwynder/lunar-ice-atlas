@@ -117,3 +117,33 @@ slope comes from the reprojected 240 m LOLA DEM; `LPSR_DIS` is in metres.
 
 Georeferencing sanity checks: Shackleton crater (89.67°S 129.2°E) projects 9.9 km from the grid centre, and the layout
 matches NASA's official figure (LPSC 2026 #1901, Image 1).
+
+## Task 8: full web-asset build (2026-09-25)
+
+`python -m atlas.build all`: ~2 min on CPU (M-series laptop), 27 files.
+
+| Folder | Size | Contents |
+|---|---|---|
+| `globe/` | 3.8 MB | 1440×720 int16 heights (2.0 MB), LROC colour 4k JPEG (1.4 MB) + 2k JPEG (0.37 MB) |
+| `north/` | 16 MB | cap mesh, hillshade, 5 overlays, 3 value grids |
+| `south/` | 15 MB | same as north |
+| `regions.json` | 84 KB | 9 footprints (vertex every 1 km in PS) + stats |
+| **Total** | **36.7 MB (35.0 MiB)** | plan budget ≤ 36 MB for data; ~3 MB of the 40 MB site budget left for JS |
+
+Region outlines and centroids are now computed in polar-stereographic metres. The Task 7 table's centroids were lon/lat
+means, which are off by up to 1.4 km (Mons Mouton Plateau). Corrected centroids:
+
+| Region | Centroid | Outline vertices |
+|---|---|---|
+| Haworth | 86.77°S 22.6°W | 123 |
+| Malapert Massif | 85.99°S 0.2°W | 87 |
+| Mons Mouton | 85.42°S 31.7°E | 69 |
+| Mons Mouton Plateau | 84.34°S 30.6°E | 273 |
+| Nobile Rim 1 | 85.43°S 37.3°E | 85 |
+| Nobile Rim 2 | 83.95°S 58.8°E | 83 |
+| Peak near Cabeus B | 83.65°S 68.7°W | 85 |
+| Slater Plain | 87.17°S 125.5°E | 85 |
+| de Gerlache Rim 2 | 88.23°S 65.1°W | 85 |
+
+Globe heights span −8,878 m to +10,504 m relative to R = 1,737.4 km. `ldem_4.tif` has no geotransform. Per SVS it is
+equirectangular (lon −180→180 left to right, lat +90 at the top). Task 11 must use that convention.

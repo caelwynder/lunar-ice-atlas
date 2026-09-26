@@ -1407,7 +1407,7 @@ For the units, run `python -c "from atlas.constants import ICE_DIR; from atlas.t
   - `web/public/data/globe/meta.json` = `{"version":1,"height":{"file":"height.i16.bin","width":1440,"height":720,"units":"m"},"color":{"hi":"color_4k.jpg","lo":"color_2k.jpg"}}`
   - `web/public/data/regions.json` = `{"source","doi","retrieved","regions":[{"id","name","outline":[[lon,lat],…],"centroid":[lon,lat],"coverage","stats":{…all region_stats keys except coverage…}}]}`
 
-- [ ] **Step 1: Write the failing test** `pipeline/tests/test_globe_assets.py`
+- [x] **Step 1: Write the failing test** `pipeline/tests/test_globe_assets.py`
 
 ```python
 import numpy as np
@@ -1421,9 +1421,9 @@ def test_km_to_i16_m_rounds_and_keeps_sign() -> None:
     assert out.tolist() == [[-9123, 0, 10760]]
 ```
 
-- [ ] **Step 2: Run it.** Expected: FAIL.
+- [x] **Step 2: Run it.** Expected: FAIL.
 
-- [ ] **Step 3: Implement `globe_assets.py`**
+- [x] **Step 3: Implement `globe_assets.py`** (plus a second test, `test_export_globe_writes_height_bin_jpegs_and_meta`, on synthetic rasters)
 
 ```python
 import json
@@ -1466,9 +1466,9 @@ def export_globe(ldem_tif: Path, color_tif: Path, out_dir: Path) -> dict[str, An
     return meta
 ```
 
-- [ ] **Step 4: Run it.** Expected: PASS.
+- [x] **Step 4: Run it.** Expected: PASS.
 
-- [ ] **Step 5: Implement `build.py`** (thin orchestration over tested functions)
+- [x] **Step 5: Implement `build.py`** (thin orchestration over tested functions)
 
 ```python
 import argparse
@@ -1565,17 +1565,18 @@ if __name__ == "__main__":
     main()
 ```
 Type-annotate `_region_entry(region: Region, grid: Grid, …) -> dict[str, Any]` so mypy passes (import `Region`, `Grid`, `Any`).
+  **Deviation (2026-09-25):** outlines and centroids are now built in polar-stereographic metres. With 5-corner lon/lat outlines, straight lon/lat edges drift up to **6 km** from the true (PS-straight) footprint edge, and lon/lat centroids drift up to **1.4 km**. `regions.py` now `segmentize`s footprints every 1 km (`OUTLINE_STEP_M`) before converting to lon/lat, and a new `region_centroid(region, pole)` computes the centroid in PS. Both are tested.
 
-- [ ] **Step 6: Run the build.** `python -m atlas.build all && du -sh web/public/data/*`. Expected: every file in the File-structure listing exists and the total is ≤ 36 MB, leaving room for the JS bundle.
+- [x] **Step 6: Run the build.** ✅ ~2 min on CPU, 27 files, **36.7 MB (35.0 MiB)**: at the ≤ 36 MB line, and it leaves ~3 MB of the 40 MB site budget for JS. Overlays were already WebP from Task 6. Also fixed `.gitignore`: `data/` → `/data/`, because the old pattern also ignored `web/public/data/`. `python -m atlas.build all && du -sh web/public/data/*`. Expected: every file in the File-structure listing exists and the total is ≤ 36 MB, leaving room for the JS bundle.
   - If it's over budget, save the overlays as lossless WebP (`Image.save(path.with_suffix(".webp"), lossless=True)`), change the `texture` names in `export_web.py` and its test to `.webp`, then re-run.
 
-- [ ] **Step 7: Visual QA.** Write `notebooks/qa_plot.py`, which runs matplotlib on the south pole:
+- [x] **Step 7: Visual QA.** ✅ Shackleton sits in its crater 9.95 km from the grid centre (expected, since it's at 89.67°S), and all 9 footprints sit on ridges and plateaus. View widened to ±200 km so all 9 fit. Copy in `docs/img/task8_qa_south.jpg`. Write `notebooks/qa_plot.py`, which runs matplotlib on the south pole:
   - Hillshade from `pole_layers("south").dem`, with the `pred` overlay (alpha 0.6).
   - Region outlines projected via `lonlat_to_ps`, plus a red dot at Shackleton (lon 129.2, lat −89.67) as the orientation landmark.
   - Save to `notebooks/qa_south.png` and **show it to the user**.
   - Check that Shackleton sits within ~10 km of the grid centre (500,000 m, 500,000 m), and that the region outlines sit on high-standing massifs and rims (bright in the hillshade).
 
-- [ ] **Step 8:** Run `pytest -q && pytest -m data -q && ruff check pipeline && mypy`, then **commit (ask first)**: `feat(pipeline): build CLI producing all web assets` (includes `web/public/data`).
+- [x] **Step 8:** Run `pytest -q && pytest -m data -q && ruff check pipeline && mypy`, then **commit (ask first)**: `feat(pipeline): build CLI producing all web assets` (includes `web/public/data`).
 
 ---
 

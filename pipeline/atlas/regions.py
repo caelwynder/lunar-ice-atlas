@@ -9,7 +9,7 @@ import shapely.ops
 from pyproj import CRS, Transformer
 from rasterio.features import rasterize
 
-from atlas.crs import moon_lonlat
+from atlas.crs import Pole, ice_crs, moon_lonlat, ps_to_lonlat
 from atlas.tiles import Grid
 
 EXPECTED_REGIONS = (
@@ -21,6 +21,7 @@ SLOPE_THRESHOLD_DEG = 8.0
 HIGH_PROSPECTIVITY = 0.5
 GRID_GLOB = "*_1km_S_Grid.shp"
 FOOTPRINT_SIMPLIFY_M = 1.0  # drops collinear 1 km cell corners; cell edges are exact metres
+OUTLINE_STEP_M = 1000.0  # straight PS edges bow by up to ~6 km in lon/lat, so keep a vertex every 1 km
 
 
 @dataclass(frozen=True)
@@ -48,7 +49,8 @@ def _grid_footprint(shp: Path) -> shapely.Polygon:
     """Union of a region's 1 km navigation cells, returned in lon/lat degrees."""
     crs = CRS.from_user_input(pyogrio.read_info(shp)["crs"])
     _, _, geoms, _ = pyogrio.raw.read(shp, columns=[])
-    footprint = shapely.union_all([shapely.from_wkb(g) for g in geoms]).simplify(FOOTPRINT_SIMPLIFY_M)
+    cells = shapely.union_all([shapely.from_wkb(g) for g in geoms])
+    footprint = cells.simplify(FOOTPRINT_SIMPLIFY_M).segmentize(OUTLINE_STEP_M)
     if not isinstance(footprint, shapely.Polygon):
         raise ValueError(f"{shp.name}: cells do not form a single polygon ({footprint.geom_type})")
     to_lonlat = Transformer.from_crs(crs, moon_lonlat(), always_xy=True)
@@ -71,9 +73,19 @@ def load_regions(root: Path, expected: tuple[str, ...] = EXPECTED_REGIONS) -> li
     return regions
 
 
+def _project(geometry: shapely.Polygon, crs: CRS) -> shapely.Polygon:
+    return shapely.ops.transform(Transformer.from_crs(moon_lonlat(), crs, always_xy=True).transform, geometry)
+
+
+def region_centroid(region: Region, pole: Pole) -> tuple[float, float]:
+    """Centroid taken in polar-stereographic metres; a lon/lat centroid drifts ~1 km this close to the pole."""
+    centre = _project(region.geometry, ice_crs(pole)).centroid
+    lon, lat = ps_to_lonlat(centre.x, centre.y, pole)
+    return float(lon), float(lat)
+
+
 def region_mask(region: Region, grid: Grid) -> np.ndarray:
-    to_grid = Transformer.from_crs(moon_lonlat(), grid.crs, always_xy=True)
-    projected = shapely.ops.transform(to_grid.transform, region.geometry)
+    projected = _project(region.geometry, grid.crs)
     burned = rasterize([(projected, 1)], out_shape=(grid.height, grid.width), transform=grid.transform, fill=0)
     return burned.astype(bool)
 

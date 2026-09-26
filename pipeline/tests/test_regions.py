@@ -6,8 +6,17 @@ import pytest
 import shapely
 from affine import Affine
 
-from atlas.crs import ice_crs, ps_to_lonlat
-from atlas.regions import EXPECTED_REGIONS, Region, StatLayers, load_regions, region_mask, region_stats, slugify
+from atlas.crs import ice_crs, lonlat_to_ps, ps_to_lonlat
+from atlas.regions import (
+    EXPECTED_REGIONS,
+    Region,
+    StatLayers,
+    load_regions,
+    region_centroid,
+    region_mask,
+    region_stats,
+    slugify,
+)
 from atlas.tiles import Grid
 
 
@@ -92,7 +101,15 @@ def test_load_regions_merges_1km_cells_into_one_footprint(tmp_path: Path) -> Non
     assert set(by_id) == {"peak-near-cabeus-b", "haworth"}
     assert by_id["peak-near-cabeus-b"].name == "Peak near Cabeus B"  # NASA spelling, not folder spelling
     assert region_mask(by_id["peak-near-cabeus-b"], _grid()).sum() == 9  # 3 km x 3 km at 1 km pixels
-    assert len(shapely.get_coordinates(by_id["haworth"].geometry.exterior)) == 5  # collinear cell corners removed
+    assert len(shapely.get_coordinates(by_id["haworth"].geometry.exterior)) == 9  # 2 km square, a vertex every 1 km
+
+
+def test_load_regions_outline_is_dense_enough_to_draw_in_lonlat(tmp_path: Path) -> None:
+    _write_grid(tmp_path / "Haworth", "Haworth", 480_000, 480_000, 21)
+    (region,) = load_regions(tmp_path, expected=("Haworth",))
+    lonlat = shapely.get_coordinates(region.geometry.exterior)
+    x, y = lonlat_to_ps(lonlat[:, 0], lonlat[:, 1], "south")
+    assert np.hypot(np.diff(x), np.diff(y)).max() <= 1000 + 1e-6
 
 
 def test_load_regions_requires_every_expected_region(tmp_path: Path) -> None:
@@ -127,3 +144,11 @@ def test_real_regions_load_near_south_pole_with_expected_areas() -> None:
         assert -90 < r.geometry.centroid.y < -83, r.name
         area_km2 = region_mask(r, grid).sum() * pixel_km2
         assert area_km2 == pytest.approx(REAL_AREAS_KM2[r.name], rel=0.02), r.name
+
+
+def test_region_centroid_is_the_projected_centre_not_the_lonlat_mean() -> None:
+    box = shapely.get_coordinates(shapely.box(470_000, 520_000, 530_000, 540_000).segmentize(100))
+    lon, lat = ps_to_lonlat(box[:, 0], box[:, 1], "south")
+    region = Region("r", "R", shapely.Polygon(zip(lon.tolist(), lat.tolist(), strict=True)))
+    x, y = lonlat_to_ps(*region_centroid(region, "south"), "south")
+    assert np.hypot(x - 500_000, y - 530_000) < 1.0
