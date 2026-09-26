@@ -57,3 +57,17 @@ RMSE is computed only where the `PRO` label exists (inside the 80° circle). The
 The reference map is seamless, but the predictions show mild tile-edge effects (each patch is predicted without
 seeing its neighbours). They aren't visible at whole-pole scale. The out-of-range values come from an unclipped
 regression head; `colorize.ramp_rgba` clamps them for display (Task 6).
+
+## Task 5: LOLA elevation on the cap grid (2026-09-25)
+
+`to_grid(*read_pds_dem("ldem_75{n,s}_240m.lbl"), cap_grid(pole))`: bilinear reprojection from PDS polar stereographic
+(k₀ 1, 240 m) to the ice grid (k₀ 0.994, 238.56 m).
+
+| Measure | North | South |
+|---|---|---|
+| Cap grid filled with elevation | 100% | 100% |
+| Elevation range (m above 1737.4 km) | −5,040 … +2,372 | −7,280 … +7,020 |
+| Slope correlation vs dataset `SLOPE` (all 81 patches, 5.3 M px) | **r = 0.9965** | **r = 0.9981** |
+| Median absolute slope difference | 0.24° | 0.18° |
+
+This is the first check of the north pole; research only spot-checked three south patches. Both clear the r ≥ 0.99 test.

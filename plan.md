@@ -797,7 +797,7 @@ def test_real_label_mosaic_is_disk_with_crescent_gap(pole: str) -> None:
 ```
 Expected: PASS. If the finite fraction is outside the band, print it and inspect a plot before changing the bounds.
 
-- [ ] **Step 6:** Run ruff and mypy, then **commit (ask first)**: `feat(pipeline): cap grid, patch mosaicking and footprints`
+- [x] **Step 6:** Run ruff and mypy, then **commit (ask first)**: `feat(pipeline): cap grid, patch mosaicking and footprints`
 
 ---
 
@@ -814,7 +814,7 @@ Expected: PASS. If the finite fraction is outside the band, print it and inspect
   - `slope_deg(z: np.ndarray, pixel_m: float) -> np.ndarray`
   - `hillshade(z: np.ndarray, pixel_m: float, azimuth_deg: float = 315, altitude_deg: float = 30) -> np.ndarray` (uint8)
 
-- [ ] **Step 1: Write the failing tests** `pipeline/tests/test_dem.py`
+- [x] **Step 1: Write the failing tests** `pipeline/tests/test_dem.py`
 
 ```python
 import numpy as np
@@ -861,9 +861,9 @@ def test_pds_dem_aligns_with_dataset_slope(pole: str) -> None:
     assert np.corrcoef(ours[m], ref[m])[0, 1] >= 0.99
 ```
 
-- [ ] **Step 2: Run them.** Expected: FAIL (`No module named 'atlas.dem'`).
+- [x] **Step 2: Run them.** Expected: FAIL (`No module named 'atlas.dem'`).
 
-- [ ] **Step 3: Implement `dem.py`**
+- [x] **Step 3: Implement `dem.py`**
 
 ```python
 from pathlib import Path
@@ -909,7 +909,7 @@ def hillshade(z: np.ndarray, pixel_m: float, azimuth_deg: float = 315, altitude_
     return np.round(shade * 255).astype(np.uint8)
 ```
 
-- [ ] **Step 4: Run everything.** `pytest -q pipeline/tests/test_dem.py && pytest -m data -q pipeline/tests/test_dem.py`. Expected: PASS, with r ≥ 0.99 for **both** poles. The north pole wasn't spot-checked during research, so if it fails, stop and check the north CRS orientation before going further.
+- [x] **Step 4: Run everything.** ✅ r = 0.9965 (north), 0.9981 (south) over all 81 patches per pole; the DEM fills 100% of the cap grid. See `docs/task-5-explained.md`. `pytest -q pipeline/tests/test_dem.py && pytest -m data -q pipeline/tests/test_dem.py`. Expected: PASS, with r ≥ 0.99 for **both** poles. The north pole wasn't spot-checked during research, so if it fails, stop and check the north CRS orientation before going further.
 
 - [ ] **Step 5:** Run ruff and mypy, then **commit (ask first)**: `feat(pipeline): reproject LOLA polar DEM to cap grid with alignment test`
 
