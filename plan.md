@@ -2176,7 +2176,7 @@ export const loadRegions = async (base: string): Promise<RegionsDoc> =>
   - `buildGlobeGeometry(o: GlobeOptions): THREE.BufferGeometry`, where `GlobeOptions = { latLimitDeg; lonSegments; latSegments; heightAt; exaggeration }`
   - `buildCapGeometry(meta: PoleMeta, heights: ValueGrid, exaggeration: number, overlapDeg: number): THREE.BufferGeometry` (attributes `position`, `normal`, `uv`, `edgeFade`)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests** (plus a real-data landmark test added 2026-09-25: `equirectHeightAt` on the real SVS grid gives > 10 km at the Selenean summit (5.4°N 158.6°W) and < −8.5 km at Antoniadi (70.4°S 172.4°W), which confirms lon −180 on the left and north at the top)
 
 `src/scene/globeGeometry.test.ts`:
 
@@ -2258,9 +2258,9 @@ describe.each([-90, 90])('cap lat0=%i', (lat0) => {
 });
 ```
 
-- [ ] **Step 2: Run them.** Expected: FAIL (modules missing).
+- [x] **Step 2: Run them.** Expected: FAIL (modules missing).
 
-- [ ] **Step 3: Implement `globeGeometry.ts`**
+- [x] **Step 3: Implement `globeGeometry.ts`** ✅ winding correct as written. The uv test's `toBeCloseTo(…, 12)` was relaxed to 6 digits, because a `Float32BufferAttribute` holds only ~7 significant digits (the error was 2.6e-8).
 
 ```ts
 import * as THREE from 'three';
@@ -2317,7 +2317,7 @@ export function buildGlobeGeometry(o: GlobeOptions): THREE.BufferGeometry {
 ```
 If the "faces outward" test fails, swap the winding in `gridIndex` to `(a, a + 1, a + row, a + 1, a + row + 1, a + row)`. The test decides; don't guess.
 
-- [ ] **Step 4: Implement `capGeometry.ts`**
+- [x] **Step 4: Implement `capGeometry.ts`** ✅ **Deviation:** the north-cap `flip` made north normals point inward. Mirroring PS y between the poles *and* mirroring 3D y cancel out, so both caps use the same winding and `flip` was removed.
 
 ```ts
 import * as THREE from 'three';
@@ -2377,9 +2377,9 @@ export function buildCapGeometry(meta: PoleMeta, heights: ValueGrid, exaggeratio
 ```
 PS x/y mirrors between the poles, so the winding differs: `flip` is set for the north cap. If the outward-normal test fails for one pole, invert the `flip` expression; the test decides.
 
-- [ ] **Step 5: Run everything.** `npm test && npm run typecheck && npm run lint`. Expected: PASS for both poles.
+- [x] **Step 5: Run everything.** ✅ 35 tests pass (both poles). The plan's `getIndex()!` violates `no-non-null-assertion` (typescript-eslint strict), so the tests use an `indexOf(g)` helper. Real-data build timing (Node, M-series): south cap 170 ms, north 144 ms (409,600 vertices, 661,420 triangles each); globe at 1440×643 segments 293 ms (928k vertices). `npm test && npm run typecheck && npm run lint`. Expected: PASS for both poles.
 
-- [ ] **Step 6: Commit (ask first).** `feat(web): globe and polar-cap geometry builders`
+- [x] **Step 6: Commit (ask first).** `feat(web): globe and polar-cap geometry builders`
 
 ---
 
