@@ -71,3 +71,28 @@ regression head; `colorize.ramp_rgba` clamps them for display (Task 6).
 | Median absolute slope difference | 0.24° | 0.18° |
 
 This is the first check of the north pole; research only spot-checked three south patches. Both clear the r ≥ 0.99 test.
+
+## Task 6: colour ramps and per-pole web export (2026-09-25)
+
+Trial export of the real south pole into the scratchpad (the real export into `web/public/data` is Task 8): 11.4 s.
+
+| File | Size |
+|---|---|
+| `pred.webp` / `ref.webp` / `err.webp` (lossless, 2560², RGBA) | 6.79 / 7.03 / 4.24 MB |
+| `psr.webp` / `test.webp` | 0.09 / 0.00 MB |
+| `hillshade.jpg` (2560², q85) | 1.11 MB |
+| `height.i16.bin` (640², int16 m) | 0.82 MB |
+| `pred/ref/err.u8.bin` (640², uint8) | 0.41 MB each |
+| **Total per pole** | **21.3 MB** (PNG overlays were 31.7 MB) |
+
+Format comparison for the three big overlays (south):
+
+| Format | pred | ref | err | Colour error |
+|---|---|---|---|---|
+| PNG | 8.73 | 9.08 | 10.48 MB | none |
+| **WebP lossless (chosen)** | 6.79 | 7.03 | 4.24 MB | none |
+| WebP q95 | 3.82 | 4.11 | 1.68 MB | mean 2/255 (pred, ref), up to 112/255 (err) |
+
+Projected site payload with lossless overlays: ≈ 2 × 21.3 + globe (~5 MB) ≈ **47 MB**, over the plan's 40 MB budget.
+**Decision (user, 2026-09-25): option B.** `pred`/`ref` are WebP q95 (alpha exact); `err`/`psr`/`test` stay lossless.
+Re-measured south export: pred 3.82 MB, ref 4.11 MB, err 4.24 MB, **15.4 MB per pole** → projected site ≈ **36 MB** (within 40 MB).
