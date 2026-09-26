@@ -1185,7 +1185,7 @@ def export_pole(pole: Pole, layers: PoleLayers, out_dir: Path, stride: int, pixe
 
 - [x] **Step 7: Run the tests.** ✅ 40 tests pass. **Deviation:** overlays are **lossless WebP**, not PNG (the plan's own fallback): a trial south export was 31.7 MB/pole as PNG and 21.3 MB as WebP, with identical pixels. The user chose option B: `pred`/`ref` near-lossless (q95), the rest lossless → 15.4 MB/pole, ≈36 MB site. See `docs/task-6-explained.md`. `pytest -q pipeline/tests/test_colorize.py pipeline/tests/test_export_web.py`. Expected: all pass. Run `ruff check pipeline && mypy`; if lines pass 120 characters, wrap them.
 
-- [ ] **Step 8: Commit (ask first).** `feat(pipeline): validated colour ramps and per-pole web export`
+- [x] **Step 8: Commit (ask first).** `feat(pipeline): validated colour ramps and per-pole web export`
 
 ---
 
@@ -1206,7 +1206,7 @@ def export_pole(pole: Pole, layers: PoleLayers, out_dir: Path, stride: int, pixe
   - `region_mask(region: Region, grid: Grid) -> np.ndarray` (bool)
   - `region_stats(mask: np.ndarray, layers: StatLayers) -> dict[str, float | None]`, with keys `coverage, predMean, predP90, fracPredGt05, refMean, slopeMeanDeg, fracSlopeLt5, fracSlopeLt8, fracPsr, psrDistMean, tmaxMeanK`
 
-- [ ] **Step 1: Manual download (user action).** Ask the user to:
+- [x] **Step 1: Manual download (user action).** ✅ **Done 2026-09-25. Deviation:** the release has **no single 9-polygon layer**. It has one folder per region with 1 km/100 m/10 m LGRS navigation-grid shapefiles, already in the ice-grid CRS (k0 0.994). So `load_regions(root, expected=EXPECTED_REGIONS)` now unions each folder's `*_1km_S_Grid.shp` cells into one **grid footprint** (21×21 km for most regions, larger than NASA's ~15×15 km, so it probably includes a margin; the UI must call it a footprint). The `ARTEMIS_REGIONS_SHP`/`ARTEMIS_NAME_FIELD` constants aren't needed. Original instructions follow for reference. Ask the user to:
   1. Open https://www.sciencebase.gov/catalog/item/671a6fa8d34efed5620f89f8 in a browser (USGS "Down Selected Artemis III Candidate Landing Site Navigational Grids", DOI 10.5066/P1MEQ6UK, CC0).
   2. Download the attached zip(s) into `data/artemis/` and unzip them.
 
@@ -1224,7 +1224,7 @@ EOF
   - Pick the polygon layer with **9 features** whose text field holds the nine names. Set `ARTEMIS_REGIONS_SHP = ARTEMIS_DIR / "<relative path>"` and `ARTEMIS_NAME_FIELD = "<field>"` in `constants.py`.
   - **If no such layer exists, stop and ask the user.** The fallback is Cesium ion asset 2683531, exported once with their free ion token. Never type coordinates by hand.
 
-- [ ] **Step 2: Write the failing tests** `pipeline/tests/test_regions.py`
+- [x] **Step 2: Write the failing tests** `pipeline/tests/test_regions.py`
 
 ```python
 import numpy as np
@@ -1276,9 +1276,9 @@ def test_region_stats_no_coverage_returns_none() -> None:
 ```
 Add `import pytest` at the top.
 
-- [ ] **Step 3: Run them.** Expected: FAIL (`No module named 'atlas.regions'`).
+- [x] **Step 3: Run them.** Expected: FAIL (`No module named 'atlas.regions'`).
 
-- [ ] **Step 4: Implement `regions.py`**
+- [x] **Step 4: Implement `regions.py`**
 
 ```python
 import re
@@ -1372,9 +1372,9 @@ def region_stats(mask: np.ndarray, layers: StatLayers) -> dict[str, float | None
     }
 ```
 
-- [ ] **Step 5: Run the tests.** `pytest -q pipeline/tests/test_regions.py`. Expected: `3 passed`. `rasterize` burns pixels whose **centres** fall inside the polygon; the square's edges sit on pixel boundaries, so exactly 100 pixels should burn. If it's off by a row or column, check the PS→lon/lat→PS round-trip precision in the fixture (not `region_mask`).
+- [x] **Step 5: Run the tests.** `pytest -q pipeline/tests/test_regions.py`. Expected: `3 passed`. `rasterize` burns pixels whose **centres** fall inside the polygon; the square's edges sit on pixel boundaries, so exactly 100 pixels should burn. If it's off by a row or column, check the PS→lon/lat→PS round-trip precision in the fixture (not `region_mask`).
 
-- [ ] **Step 6: Real-data test and `LPSR_DIS` units.** Append, then run `pytest -m data -q pipeline/tests/test_regions.py`:
+- [x] **Step 6: Real-data test and `LPSR_DIS` units.** ✅ All 9 regions load near the south pole, their areas match the USGS cell counts within 2%, and all have 100% model coverage. `LPSR_DIS` is in **metres** (matches an independent distance transform, ratio 1.006). The layout matches NASA's LPSC 2026 region map. See `docs/task-7-explained.md`. Append, then run `pytest -m data -q pipeline/tests/test_regions.py`:
 
 ```python
 @pytest.mark.data
@@ -1389,7 +1389,7 @@ def test_real_regions_load_near_south_pole() -> None:
 ```
 For the units, run `python -c "from atlas.constants import ICE_DIR; from atlas.tiles import cap_grid, mosaic, patch_files; import numpy as np; a=mosaic(patch_files(ICE_DIR,'_LPSR_DIS.tif','south'),cap_grid('south')); print(np.nanmin(a), np.nanmax(a))"`. A maximum ≫ 1,000 means metres. Set `PSR_DIST_UNITS = "m"` (or what the data shows) in `constants.py` and note it in `docs/benchmarks.md`.
 
-- [ ] **Step 7:** Run ruff and mypy, then **commit (ask first)**: `feat(pipeline): Artemis candidate region masks and statistics`
+- [x] **Step 7:** Run ruff and mypy, then **commit (ask first)**: `feat(pipeline): Artemis candidate region masks and statistics`
 
 ---
 
@@ -1480,8 +1480,7 @@ import numpy as np
 import shapely
 
 from atlas.constants import (
-    ARTEMIS_NAME_FIELD,
-    ARTEMIS_REGIONS_SHP,
+    ARTEMIS_DIR,
     DEM_DIR,
     ICE_DIR,
     ICE_PIXEL_M,
@@ -1540,8 +1539,8 @@ def build_regions() -> None:
         psr_dist=_ice_layer("_LPSR_DIS.tif", "south"), tmax=_ice_layer("_TMAX.tif", "south"),
     )
     grid = cap_grid("south")
-    entries = [_region_entry(r, grid, stat_layers) for r in load_regions(ARTEMIS_REGIONS_SHP, ARTEMIS_NAME_FIELD)]
-    doc = {"source": "USGS Down Selected Artemis III Candidate Landing Site Navigational Grids",
+    entries = [_region_entry(r, grid, stat_layers) for r in load_regions(ARTEMIS_DIR)]
+    doc = {"source": "USGS Down Selected Artemis III Candidate Landing Site Navigational Grids (1 km grid footprints)",
            "doi": "10.5066/P1MEQ6UK", "retrieved": date.today().isoformat(), "regions": entries}
     (WEB_DATA_DIR / "regions.json").write_text(json.dumps(doc, indent=2))
     log.info("wrote %d regions", len(entries))

@@ -96,3 +96,24 @@ Format comparison for the three big overlays (south):
 Projected site payload with lossless overlays: ≈ 2 × 21.3 + globe (~5 MB) ≈ **47 MB**, over the plan's 40 MB budget.
 **Decision (user, 2026-09-25): option B.** `pred`/`ref` are WebP q95 (alpha exact); `err`/`psr`/`test` stay lossless.
 Re-measured south export: pred 3.82 MB, ref 4.11 MB, err 4.24 MB, **15.4 MB per pole** → projected site ≈ **36 MB** (within 40 MB).
+
+## Task 7: Artemis candidate regions (2026-09-25)
+
+Source: USGS DOI 10.5066/P1MEQ6UK, one folder per region with `*_1km_S_Grid.shp` in the ice-grid CRS. The region area is
+taken as the union of the 1 km cells (the "grid footprint"). Statistics use the south cap grid (238.56 m pixels);
+slope comes from the reprojected 240 m LOLA DEM; `LPSR_DIS` is in metres.
+
+| Region | Centroid | Area km² | Model cover | Pred mean | Ref mean | Pred > 0.5 | Slope mean | < 8° | < 5° | PSR | Dist. to PSR | Tmax |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Haworth | 86.74°S 22.7°W | 930 | 100% | 0.41 | 0.41 | 34% | 10.1° | 38% | 17% | 1% | 2.8 km | 230 K |
+| Malapert Massif | 85.98°S 0.2°W | 462 | 100% | 0.14 | 0.13 | 8% | 16.9° | 12% | 5% | 1% | 4.1 km | 266 K |
+| Mons Mouton | 85.42°S 31.7°E | 289 | 100% | 0.30 | 0.30 | 19% | 12.1° | 33% | 12% | 3% | 2.6 km | 240 K |
+| Mons Mouton Plateau | 84.24°S 30.0°E | 4,524 | 100% | 0.24 | 0.24 | 16% | 11.6° | 37% | 19% | 2% | 3.1 km | 254 K |
+| Nobile Rim 1 | 85.43°S 37.3°E | 441 | 100% | 0.21 | 0.21 | 14% | 16.5° | 17% | 9% | 2% | 3.6 km | 258 K |
+| Nobile Rim 2 | 83.95°S 58.8°E | 420 | 100% | 0.39 | 0.39 | 33% | 11.2° | 38% | 20% | 9% | 3.0 km | 231 K |
+| Peak near Cabeus B | 83.65°S 68.7°W | 441 | 100% | 0.21 | 0.21 | 19% | 18.5° | 4% | 1% | 0% | 4.3 km | 264 K |
+| Slater Plain | 87.16°S 125.5°E | 441 | 100% | 0.45 | 0.44 | 41% | 8.7° | 51% | 27% | 4% | 2.4 km | 220 K |
+| de Gerlache Rim 2 | 88.21°S 65.0°W | 441 | 100% | 0.19 | 0.20 | 9% | 12.3° | 25% | 11% | 2% | 4.5 km | 251 K |
+
+Georeferencing sanity checks: Shackleton crater (89.67°S 129.2°E) projects 9.9 km from the grid centre, and the layout
+matches NASA's official figure (LPSC 2026 #1901, Image 1).

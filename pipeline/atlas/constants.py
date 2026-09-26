@@ -13,6 +13,7 @@ CAP_ORIGIN_Y = 802_136.24
 CAP_EDGE_LAT_DEG = 80.0
 MESH_STRIDE = 4
 ERR_RANGE = 0.2
+PSR_DIST_UNITS = "m"  # LPSR_DIS matches our own nearest-PSR distance in metres (ratio 1.006), 0 inside PSRs
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "data"
