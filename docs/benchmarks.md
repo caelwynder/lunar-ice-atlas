@@ -40,3 +40,20 @@ Command: `bash scripts/predict_all.sh` → `data/derived/pred_tiles/<patch>_ASP_
 
 RMSE is computed only where the `PRO` label exists (inside the 80° circle). The small train/test gap (0.0264 vs
 0.0277) means showing predictions on training patches is not badly flattering, but the UI still reports test RMSE only.
+
+## Task 4: stitched polar mosaics (2026-09-25)
+
+`mosaic(patch_files(dir, suffix, pole), cap_grid(pole))` builds one 2560×2560 float32 map per pole
+(10×10 patches, 238.56 m/px, NaN where no tile or no label).
+
+| Measure | North | South |
+|---|---|---|
+| Share of the ≥80° disk with data | 91.0% | 91.0% |
+| Valid label pixels | 4,587,767 | 4,587,767 |
+| Tile-border / in-tile jump ratio: reference `PRO` | 0.99 | 1.01 |
+| Tile-border / in-tile jump ratio: prediction | 1.37 | 1.41 |
+| Prediction pixels outside [0, 1] | 1.60% | 2.36% |
+
+The reference map is seamless, but the predictions show mild tile-edge effects (each patch is predicted without
+seeing its neighbours). They aren't visible at whole-pole scale. The out-of-range values come from an unclipped
+regression head; `colorize.ramp_rgba` clamps them for display (Task 6).

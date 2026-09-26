@@ -627,7 +627,7 @@ def test_test_split_rmse_matches_card() -> None:
 ```
 Expected: `2 passed`. If the RMSE check fails here but passed in M0, predict-time and test-time transforms differ: **stop and investigate**; don't loosen the threshold.
 
-- [ ] **Step 7:** Record the prediction runtime and the RMSE from this test in `docs/benchmarks.md`, then **commit (ask first)**: `feat(pipeline): run ice model over all polar patches`
+- [x] **Step 7:** Record the prediction runtime and the RMSE from this test in `docs/benchmarks.md`, then **commit (ask first)**: `feat(pipeline): run ice model over all polar patches`
 
 ---
 
@@ -647,7 +647,7 @@ Expected: `2 passed`. If the RMSE check fails here but passed in M0, predict-tim
   - `footprint(paths: Iterable[Path], grid: Grid) -> np.ndarray` (bool, True where any listed tile lies)
   - `patch_files(directory: Path, suffix: str, pole: Pole) -> list[Path]`
 
-- [ ] **Step 1: Write the failing tests** (append)
+- [x] **Step 1: Write the failing tests** (append)
 
 ```python
 from affine import Affine
@@ -697,9 +697,9 @@ def test_footprint_marks_tile_extent_even_where_values_are_nan(write_tif) -> Non
     assert fp.sum() == 16
 ```
 
-- [ ] **Step 2: Run them.** Expected: FAIL (`ImportError: cannot import name 'Grid'`).
+- [x] **Step 2: Run them.** Expected: FAIL (`ImportError: cannot import name 'Grid'`).
 
-- [ ] **Step 3: Implement** (append to `tiles.py`; move the new imports to the top of the file)
+- [x] **Step 3: Implement** (append to `tiles.py`; move the new imports to the top of the file)
 
 ```python
 from collections.abc import Iterable
@@ -780,9 +780,9 @@ def patch_files(directory: Path, suffix: str, pole: Pole) -> list[Path]:
     return files
 ```
 
-- [ ] **Step 4: Run the tests.** `pytest -q pipeline/tests/test_tiles.py`. Expected: all non-data tests pass.
+- [x] **Step 4: Run the tests.** `pytest -q pipeline/tests/test_tiles.py`. Expected: all non-data tests pass.
 
-- [ ] **Step 5: Real-data check.** Append, then run `pytest -m data -q pipeline/tests/test_tiles.py`:
+- [x] **Step 5: Real-data check.** ✅ Both poles pass: 91.0% of the 80° disk has data. The predictions have mild tile-edge seams (1.4× border jump, not visible at map scale) and 1.6–2.4% of pixels fall outside [0,1] (clamped in Task 6). See `docs/task-4-explained.md`. Append, then run `pytest -m data -q pipeline/tests/test_tiles.py`:
 
 ```python
 @pytest.mark.data
