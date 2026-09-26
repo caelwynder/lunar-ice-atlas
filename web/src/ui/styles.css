@@ -97,3 +97,141 @@ select:focus-visible {
     border-radius: 12px 12px 0 0;
   }
 }
+
+#panel {
+  padding: 16px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+#panel h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+.pitch,
+.hint {
+  margin: 0 0 12px;
+  color: var(--text-2);
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+
+.layers {
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+
+.layers > legend {
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.layer-option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  column-gap: 8px;
+  padding: 6px 0;
+  cursor: pointer;
+}
+
+.layer-option > .legend {
+  grid-column: 2;
+  margin-top: 4px;
+}
+
+.legend-bar {
+  height: 10px;
+  border-radius: 2px;
+}
+
+.ticks,
+.poles {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border: 1px solid var(--text-2);
+}
+
+.swatch-binary {
+  background: repeating-linear-gradient(45deg, var(--c) 0 3px, transparent 3px 6px);
+}
+
+.legend-label {
+  color: var(--text-2);
+  font-size: 12px;
+}
+
+.controls {
+  display: grid;
+  gap: 10px;
+}
+
+.range {
+  display: grid;
+  gap: 4px;
+  color: var(--text-2);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+button {
+  padding: 6px 12px;
+  border: 1px solid var(--text-2);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #2a2a28;
+}
+
+input[type='radio'],
+input[type='checkbox'],
+input[type='range'] {
+  accent-color: var(--focus);
+}
+
+#about {
+  max-width: min(560px, calc(100% - 32px));
+  padding: 20px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  line-height: 1.5;
+}
+
+#about::backdrop {
+  background: rgb(0 0 0 / 60%);
+}
+
+#about a {
+  color: var(--focus);
+}
+
+#about ul {
+  padding-left: 20px;
+  color: var(--text-2);
+}

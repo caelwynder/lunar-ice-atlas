@@ -2612,7 +2612,7 @@ void start();
 - The readout always shows numbers as text.
 - Focus ring: `outline: 2px solid var(--focus)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests** (`?.` instead of `!`, for lint; plus a negative-zero readout test added after the browser check)
 
 `src/ui/legend.test.ts`:
 
@@ -2660,9 +2660,9 @@ it('omits elevation when unknown', () => {
 });
 ```
 
-- [ ] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 2: Run them.** Expected: FAIL.
 
-- [ ] **Step 3: Implement `readout.ts`**
+- [x] **Step 3: Implement `readout.ts`** ✅ **Deviation:** values are rounded before the sign is chosen (`rounded()`), because the browser check showed `Model − reference −0.00` and `0.00°W` for tiny negatives.
 
 ```ts
 import type { PickResult } from '../scene/picking';
@@ -2681,7 +2681,7 @@ export function formatReadout(p: PickResult): string[] {
 }
 ```
 
-- [ ] **Step 4: Implement `legend.ts`**
+- [x] **Step 4: Implement `legend.ts`** ✅ The binary legend text is just `(hatched)`, because it sits under the layer name and the full label repeated it.
 
 ```ts
 import type { LayerMeta } from '../data/schema';
@@ -2719,7 +2719,7 @@ export function renderLegend(layer: LayerMeta): HTMLElement {
 ```
 Add CSS for `.swatch-binary { background: repeating-linear-gradient(45deg, var(--c) 0 3px, transparent 3px 6px); }`.
 
-- [ ] **Step 5: Implement `about.ts` and the full `layers.ts`:**
+- [x] **Step 5: Implement `about.ts` and the full `layers.ts`:** ✅ `TEST_RMSE = '0.0277'` (docs/benchmarks.md, 25 test patches).
   - **`renderAbout(dialog, rmse)`** fills the dialog with:
     - The title "About the Lunar Ice Atlas".
     - The two model-card caveats quoted verbatim:
@@ -2741,9 +2741,9 @@ Add CSS for `.swatch-binary { background: repeating-linear-gradient(45deg, var(-
     - Keyboard: when the canvas has focus (`tabindex="0"`), pressing `i` picks at NDC (0, 0).
     - The RMSE string comes from a constant `TEST_RMSE` in `layers.ts`, copied from `docs/benchmarks.md` after Task 3.
 
-- [ ] **Step 6: Run everything, then check by hand.** Run `npm test && npm run typecheck && npm run lint && npm run dev`. Every layer should switch with the right legend; hover values should change over the cap and show "—" in the crescent; the About dialog should open and close with Esc; and tabbing through every control should show a focus ring.
+- [x] **Step 6: Run everything, then check by hand.** ✅ Driven with Playwright/Chromium: all 5 layer options switch with the correct legends; hover shows values on the cap and `—` in the no-data crescent (e.g. 80.44°S 74.17°E); the About dialog opens (6 credit links) and Esc closes it; every control shows the 2 px focus ring, and `i` on the focused canvas reads the centre. 47 tests pass. Screenshots are in `docs/img/task13_*.jpg`. **Note for Task 14:** region outlines and test-patch outlines are both white, so Task 14's labelling or selection should make regions distinguishable. Run `npm test && npm run typecheck && npm run lint && npm run dev`. Every layer should switch with the right legend; hover values should change over the cap and show "—" in the crescent; the About dialog should open and close with Esc; and tabbing through every control should show a focus ring.
 
-- [ ] **Step 7: Commit (ask first).** `feat(web): layer controls, legends, readout and about panel`
+- [x] **Step 7: Commit (ask first).** `feat(web): layer controls, legends, readout and about panel`
 
 ---
 
