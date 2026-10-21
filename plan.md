@@ -2784,7 +2784,7 @@ Add CSS for `.swatch-binary { background: repeating-linear-gradient(45deg, var(-
 - A "Table" toggle renders the same data as a `<table>`.
 - A region with `coverage < 0.99` gets the note "partial model coverage (NN%)".
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests** ✅ The `region()` helper lives in `src/ui/__testutils__.ts` from the start, because importing one test file into another re-registers its tests. `!` became `?.` or a guard, for lint. **Added:** a `regionAt` test (point-in-footprint on a south PS plane).
 
 `src/ui/regions.test.ts`:
 
@@ -2832,9 +2832,9 @@ it('table view carries the same values', () => {
 ```
 (Importing the `region` helper from a test file is fine for vitest. If eslint objects, move it to `src/ui/__testutils__.ts`.)
 
-- [ ] **Step 2: Run them.** Expected: FAIL.
+- [x] **Step 2: Run them.** Expected: FAIL.
 
-- [ ] **Step 3: Implement `regions.ts` (`sortRegions`, `renderRegionCard`, `mountRegions`)**
+- [x] **Step 3: Implement `regions.ts` (`sortRegions`, `renderRegionCard`, `mountRegions`)** ✅ `mountRegions` is split (`regionButtons`, `metricSelect`) so each function stays under 50 lines, and the table view uses the current sort order. **Added `regionAt(regions, lat, lon)`**, and the hover readout prefixes the region name. This follows up the Task 13 note: regions are now identifiable on hover, and on selection (amber).
 
 ```ts
 import type { Region, StatKey } from '../data/regionsSchema';
@@ -2908,7 +2908,7 @@ export function mountRegions(container: HTMLElement, ctx: UiContext): void {
 ```
 `mountRegions` is about 45 lines. If eslint's complexity rule or the 50-line rule trips, split out `renderList(...)`.
 
-- [ ] **Step 4: Implement `regionChart.ts`**
+- [x] **Step 4: Implement `regionChart.ts`**
 
 ```ts
 import type { Region, StatKey } from '../data/regionsSchema';
@@ -2982,9 +2982,9 @@ export function renderRegionTable(regions: readonly Region[]): HTMLTableElement 
 ```
 The `maxV` scale assumes non-negative metrics, which is true for all six.
 
-- [ ] **Step 5: Wire it up.** In `mountUi`, after the layer controls, call `mountRegions(panel, ctx)`.
+- [x] **Step 5: Wire it up.** In `mountUi`, after the layer controls, call `mountRegions(panel, ctx)`.
 
-- [ ] **Step 6: Run everything, then check by hand.** Run `npm test && npm run typecheck && npm run lint && npm run dev`. All 9 outlines should show on the south cap. Clicking a region should fly to it, turn the outline amber, and show its card; the chart should re-sort and restyle when the metric changes; and the Table toggle should work. **Screenshot a selected region and show the user.**
+- [x] **Step 6: Run everything, then check by hand.** ✅ Checked with Playwright/Chromium: the 9 outlines show; clicking Slater Plain flies there (the screen centre reads exactly 87.17°S 125.46°E, the Task 8 PS centroid), the outline turns amber, and the card matches Task 7's stats (0.45 / 41% / 51% / 27% / 4% / 220 K); switching to “slope < 8°” re-sorts (Slater 51% … Peak near Cabeus B 4%); the table shows 9 rows; hovering names the region. 51 tests pass. Screenshots are in `docs/img/task14_*.jpg`. Run `npm test && npm run typecheck && npm run lint && npm run dev`. All 9 outlines should show on the south cap. Clicking a region should fly to it, turn the outline amber, and show its card; the chart should re-sort and restyle when the metric changes; and the Table toggle should work. **Screenshot a selected region and show the user.**
 
 - [ ] **Step 7: Commit (ask first).** `feat(web): Artemis candidate region explorer`
 

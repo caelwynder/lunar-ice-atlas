@@ -5,6 +5,7 @@ import type { AtlasScene } from '../scene/scene';
 import { renderAbout } from './about';
 import { el, renderLegend } from './legend';
 import { formatReadout } from './readout';
+import { mountRegions, regionAt } from './regions';
 
 export interface UiContext {
   scene: AtlasScene;
@@ -78,10 +79,12 @@ function controls(scene: AtlasScene, about: HTMLDialogElement): HTMLElement {
   return box;
 }
 
-function wireReadout(canvas: HTMLCanvasElement, readout: HTMLElement, scene: AtlasScene): void {
+function wireReadout(canvas: HTMLCanvasElement, readout: HTMLElement, scene: AtlasScene, regions: RegionsDoc): void {
   const show = (ndcX: number, ndcY: number): void => {
     const hit = scene.pick(ndcX, ndcY);
-    readout.textContent = hit ? formatReadout(hit).join(' · ') : '';
+    const inRegion = hit ? regionAt(regions.regions, hit.lat, hit.lon) : null;
+    const lines = hit ? formatReadout(hit) : [];
+    readout.textContent = (inRegion ? [inRegion.name, ...lines] : lines).join(' · ');
   };
   let pending: PointerEvent | null = null;
   const flush = (): void => {
@@ -117,7 +120,8 @@ export function mountUi(ctx: UiContext): void {
     controls(ctx.scene, about),
     el('p', 'hint', 'Drag to rotate · scroll to zoom · focus the Moon and press “i” to read the centre point'),
   );
-  wireReadout(canvas, readout, ctx.scene);
+  mountRegions(panel, ctx);
+  wireReadout(canvas, readout, ctx.scene, ctx.regions);
   ctx.scene.setLayer(DEFAULT_LAYER);
   ctx.scene.setOpacity(DEFAULT_OPACITY);
 }
