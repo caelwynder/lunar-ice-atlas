@@ -51,14 +51,26 @@ test('keyboard users reach the South Pole map, switch style and come back', asyn
   await page.getByRole('radio', { name: 'Hotspots' }).check();
   await expect(page.locator('.basemap')).toHaveAttribute('src', /d-dark\.webp$/);
   await page.getByRole('button', { name: 'Back to Moon' }).click();
-  await expect(page).toHaveURL(/#\/$/);
+  await expect(page).toHaveURL(/:\d+\/(#\/)?$/);
   await expect(page.locator('#moon')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open South Pole map' })).toBeFocused();
+  await page.goForward();
+  await expect(page).toHaveURL(/#\/south$/);
+});
+
+test('a render that fails to load leaves the previous render pressed', async ({ page }) => {
+  await page.route('**/models/grid.glb', (route) => route.abort());
+  await openLanding(page);
+  await page.getByRole('button', { name: 'Grid render' }).click();
+  await expect(page.locator('#status')).toContainText('Could not load the Grid render');
+  await expect(page.getByRole('button', { name: 'Topography render' })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: 'Grid render' })).toHaveAttribute('aria-pressed', 'false');
 });
 
 test('a deep link opens the North Pole map directly', async ({ page }) => {
   await page.goto('/#/north');
   await expect(page.getByRole('heading', { name: 'Predicted ice prospectivity', level: 1 })).toBeVisible();
-  await expect(page.locator('.side')).toContainText('of the cap ≥ 0.4');
+  await expect(page.locator('.side')).toContainText('of covered area ≥ 0.4');
   await expect(page.locator('.basemap')).toHaveAttribute('src', /north\/b-dark\.webp$/);
 });
 

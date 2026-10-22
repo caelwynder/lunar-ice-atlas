@@ -88,7 +88,11 @@ function mapPane(meta: MapsMeta, ranked: Ranked[]) {
     el('div', { class: 'scale-bar', style: `width:${scaleWidth}` }),
     el('span', {}, `${SCALE_KM} km`),
   );
-  const pane = el('div', { class: 'map-pane' }, img, svgEl, ...badges, poleTag, scale);
+  const error = el('p', { class: 'map-error', role: 'alert' }, 'Could not load this map. Try reloading.');
+  error.hidden = true;
+  img.addEventListener('error', () => (error.hidden = false));
+  img.addEventListener('load', () => (error.hidden = true));
+  const pane = el('div', { class: 'map-pane' }, img, svgEl, ...badges, poleTag, scale, error);
   return { pane, img, polygons, badges };
 }
 
@@ -133,10 +137,11 @@ function legendFor(style: MapStyle, theme: MapTheme, meta: MapsMeta): HTMLElemen
       el('p', { class: 'muted' }, 'Top 15% of predicted prospectivity; everything else is topography only.'),
     ];
   }
-  const labels = ['0.4 – 0.6', '0.6 – 0.8', '0.8 – 1'];
+  const bounds = [...meta.levels, 1];
+  const labels = meta.levels.map((lo, i) => `${lo} – ${bounds[i + 1] ?? 1}`);
   return [
     el('div', { class: 'swatches' }, ...labels.map((l, i) => swatch(c[i] ?? c[0], l))),
-    el('p', { class: 'muted' }, 'Below 0.4: topography only.'),
+    el('p', { class: 'muted' }, `Below ${meta.levels[0] ?? 0}: topography only.`),
   ];
 }
 
@@ -172,9 +177,9 @@ function northStats(meta: MapsMeta): HTMLElement {
       'div',
       { class: 'stats' },
       card(s.mean.toFixed(2), 'mean prospectivity'),
-      card(pct(s.fracGe04), 'of the cap ≥ 0.4'),
-      card(pct(s.fracGe06), 'of the cap ≥ 0.6'),
-      card(pct(s.fracGe08), 'of the cap ≥ 0.8'),
+      card(pct(s.fracGe04), 'of covered area ≥ 0.4'),
+      card(pct(s.fracGe06), 'of covered area ≥ 0.6'),
+      card(pct(s.fracGe08), 'of covered area ≥ 0.8'),
       card(s.rmse.toFixed(4), `RMSE vs reference · ${RUN_LOG.perPole} patches`),
       card(pct(s.coverage), 'of the cap covered by the model'),
     ),

@@ -61,6 +61,33 @@ describe('mountPoleMap (south)', () => {
     expect(root.querySelector('.legend .ramp')).not.toBeNull();
   });
 
+  it('labels the band legend from the meta levels', () => {
+    mountPoleMap(root, {
+      base: '/',
+      pole: 'south',
+      meta: { ...META.south, levels: [0.3, 0.5, 0.7] },
+      regions: REGIONS,
+      onBack: vi.fn(),
+    });
+    expect([...root.querySelectorAll('.legend .swatch-label')].map((s) => s.textContent)).toEqual([
+      '0.3 – 0.5',
+      '0.5 – 0.7',
+      '0.7 – 1',
+    ]);
+    expect(root.querySelector('.legend .muted')?.textContent).toContain('Below 0.3');
+  });
+
+  it('says so when the basemap fails to load', () => {
+    mount('south');
+    const msg = root.querySelector<HTMLElement>('.map-error');
+    expect(msg?.hidden).toBe(true);
+    root.querySelector('.basemap')?.dispatchEvent(new Event('error'));
+    expect(msg?.hidden).toBe(false);
+    expect(msg?.textContent).toContain('Could not load');
+    root.querySelector('.basemap')?.dispatchEvent(new Event('load'));
+    expect(msg?.hidden).toBe(true);
+  });
+
   it('remembers the chosen style and theme across visits', () => {
     const first = mount('south');
     pick('Hotspots');
@@ -104,5 +131,11 @@ describe('mountPoleMap (north)', () => {
     expect(root.querySelector('h1')?.textContent).toBe('Predicted ice prospectivity');
     expect(root.textContent).toContain(`${Math.round(META.north.stats.fracGe04 * 100)}%`);
     expect(src()).toBe('/data/maps/north/b-dark.webp');
+  });
+
+  it('describes cap shares as a share of the area the model covers', () => {
+    mount('north');
+    expect(root.textContent).toContain('of covered area ≥ 0.4');
+    expect(root.textContent).not.toContain('of the cap ≥');
   });
 });

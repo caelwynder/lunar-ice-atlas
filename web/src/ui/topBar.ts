@@ -8,14 +8,19 @@ export interface TopBarOptions {
   onInfo(): void;
 }
 
-export function mountTopBar(root: HTMLElement, opts: TopBarOptions): { setInfoOpen(open: boolean): void } {
+export function mountTopBar(
+  root: HTMLElement,
+  opts: TopBarOptions,
+): { setRender(id: RenderId): void; setInfoOpen(open: boolean): void } {
   const group = el('div', { class: 'render-toggle pill', role: 'group', 'aria-label': 'Moon render' });
+  const press = (id: RenderId): void =>
+    buttons.forEach((b, i) => b.setAttribute('aria-pressed', String(RENDER_IDS[i] === id)));
   const buttons = RENDER_IDS.map((id) => {
     const label = RENDER_LABEL[id];
     const b = el('button', { type: 'button', 'aria-label': `${label} render`, 'data-tip': label }, svg(ICONS[id]));
     b.setAttribute('aria-pressed', String(id === opts.initial));
     b.addEventListener('click', () => {
-      for (const other of buttons) other.setAttribute('aria-pressed', String(other === b));
+      press(id);
       opts.onRender(id);
     });
     return b;
@@ -29,5 +34,5 @@ export function mountTopBar(root: HTMLElement, opts: TopBarOptions): { setInfoOp
   info.setAttribute('aria-expanded', 'false');
   info.addEventListener('click', () => opts.onInfo());
   root.replaceChildren(group, info);
-  return { setInfoOpen: (open) => info.setAttribute('aria-expanded', String(open)) };
+  return { setRender: press, setInfoOpen: (open) => info.setAttribute('aria-expanded', String(open)) };
 }

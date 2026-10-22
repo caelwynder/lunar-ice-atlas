@@ -4,7 +4,7 @@ import { type MapsMeta, loadMapsMeta } from './data/mapsSchema';
 import type { RegionsDoc } from './data/regionsSchema';
 import type { Pole } from './geo/polarStereo';
 import { type Route, onRoute, routeHash } from './router';
-import { type MoonScene, createMoonScene } from './scene/moonScene';
+import { type MoonScene, type RenderId, createMoonScene } from './scene/moonScene';
 import { type InfoPanel, mountInfoPanel } from './ui/infoPanel';
 import { mountPoleMap } from './ui/poleMap';
 import { createStatus } from './ui/status';
@@ -37,9 +37,17 @@ const status = createStatus(el<HTMLElement>('#status'));
 const go = (route: Route): void => void (location.hash = routeHash(route));
 
 function mountLanding(scene: MoonScene, data: AtlasData): InfoPanel {
+  let shown: RenderId = 'topo';
+  let last: RenderId = 'topo';
   const bar = mountTopBar(el('#top-bar'), {
     initial: 'topo',
-    onRender: (id) => void scene.setRender(id).catch(() => undefined),
+    onRender: (id) => {
+      last = id;
+      scene
+        .setRender(id)
+        .then(() => void (last === id && (shown = id)))
+        .catch(() => last === id && bar.setRender(shown));
+    },
     onInfo: () => {
       if (panel.isOpen()) return panel.close();
       panel.open();
@@ -60,18 +68,29 @@ function router(scene: MoonScene, data: AtlasData, panel: InfoPanel): (route: Ro
   const stage = el<HTMLElement>('#stage');
   const view = el<HTMLElement>('#map-view');
   let unmount: (() => void) | null = null;
+  let prev: Route | null = null;
   return (route) => {
     unmount?.();
     unmount = null;
+    const from = prev;
+    prev = route;
     const onMap = route.view === 'map';
     stage.hidden = onMap;
     stage.inert = onMap;
     view.hidden = !onMap;
     scene.setRunning(!onMap);
-    if (route.view === 'moon') return scene.resize();
+    if (route.view === 'moon') {
+      scene.resize();
+      if (from?.view === 'map')
+        document.querySelector<HTMLButtonElement>(`#pole-links [data-pole="${from.pole}"]`)?.focus();
+      return;
+    }
     if (panel.isOpen()) panel.close();
     const opts = { base: BASE, pole: route.pole, meta: data.maps[route.pole], regions: data.regions };
-    unmount = mountPoleMap(view, { ...opts, onBack: () => go({ view: 'moon' }) }).dispose;
+    unmount = mountPoleMap(view, {
+      ...opts,
+      onBack: () => (from?.view === 'moon' ? history.back() : location.replace(routeHash({ view: 'moon' }))),
+    }).dispose;
     view.scrollTop = 0;
     view.querySelector<HTMLButtonElement>('.back')?.focus();
   };

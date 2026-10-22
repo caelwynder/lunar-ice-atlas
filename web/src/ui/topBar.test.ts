@@ -27,6 +27,13 @@ describe('mountTopBar', () => {
     expect(onRender).toHaveBeenCalledWith('grid');
   });
 
+  it('re-presses a render when told to, e.g. after a failed load', () => {
+    const bar = mountTopBar(root, { initial: 'topo', onRender: vi.fn(), onInfo: vi.fn() });
+    root.querySelector<HTMLButtonElement>('[aria-label="Grid render"]')?.click();
+    bar.setRender('topo');
+    expect(pressed()).toEqual(['Topography render']);
+  });
+
   it('toggles aria-expanded on the info button', () => {
     const onInfo = vi.fn();
     const bar = mountTopBar(root, { initial: 'topo', onRender: vi.fn(), onInfo });
