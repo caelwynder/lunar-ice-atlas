@@ -176,6 +176,7 @@ body.info-open #stage {
 }
 
 #pole-links button {
+  z-index: 1;
   position: absolute;
   left: 28px;
   top: 120px;
@@ -490,14 +491,19 @@ svg.regions polygon.is-active,
 }
 .scale {
   position: absolute;
-  left: 28px;
+  right: 0;
   bottom: 28px;
+  left: 0;
   display: flex;
   flex-direction: column;
   gap: 6px;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
+  pointer-events: none;
+}
+.scale > * {
+  margin-left: 28px;
 }
 .map-pane[data-theme='moon'] .scale {
   color: #111;

@@ -86,7 +86,7 @@ function mapPane(meta: MapsMeta, ranked: Ranked[]) {
     'div',
     { class: 'scale' },
     el('div', { class: 'scale-bar', style: `width:${scaleWidth}` }),
-    `${SCALE_KM} km`,
+    el('span', {}, `${SCALE_KM} km`),
   );
   const pane = el('div', { class: 'map-pane' }, img, svgEl, ...badges, poleTag, scale);
   return { pane, img, polygons, badges };
