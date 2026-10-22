@@ -4,15 +4,15 @@
 Portfolio project built on the NASA-IBM Lunar Foundation Model (NI-LFM, released 2026-09-10, Apache-2.0).
 Centerpiece: an interactive 3D Moon that drapes the model's downstream outputs over real lunar elevation.
 Scope: **P1 Lunar Ice Atlas + P3 Artemis region explorer**.
-Phase: planned; no application code yet. **Follow `plan.md` task by task.** `RESEARCH.md` is a frozen spec; `plan.md`'s research addendum overrides it where they differ.
+Phase: built and deployable (plan.md Tasks 0–14, then `docs/superpowers/plans/2026-10-21-nasa-moon-pole-maps-and-ship.md`, which replaced the displaced-globe front end and finished Task 15). **Follow the plans task by task.** `RESEARCH.md` is a frozen spec; `plan.md`'s research addendum overrides it where they differ.
 
 ## Tech Stack
 - Model runtime: Python 3.12 + PyTorch (CPU) + TerraTorch, using the `ni_lfm` / `terratorch_integration` packages from the NASA-IMPACT repo.
 - Python env: conda `ni-lfm` on **Python 3.12**. The system Python is 3.13, which `ni_lfm` does not support (`>=3.11,<3.13`).
 - Geospatial (offline pipeline): rasterio, pyproj, numpy. Export overlays as PNG/WebP textures plus JSON (GeoJSON for crater points).
 - Frontend / 3D: **Three.js** (0.186, MIT) + Vite 8 + TypeScript **5.9.3**. Static site with no backend and no API keys. Requires **Node ≥ 22.12 (use 24 LTS)**; the local Node is v19.3.0, which is too old.
-  - Globe: custom lat/lon mesh up to ±80.3°, with CPU vertex displacement from SVS `ldem_4` (int16 metres) and LROC colour as the texture.
-  - Poles: separate polar-cap meshes built on a polar-stereographic grid. Ice overlays map onto them with no texture reprojection.
+  - Landing: NASA SVS GLB Moon (three renders: Colour, Grid, Topography) compressed with meshopt + WebP into `web/public/models/` by `scripts/optimize_models.sh`; starfield; pulsing 12° polar caps that open the pole maps. Design source of truth: Figma file `kqQhaYmrrCWfJBZouM6Y6o`.
+  - Pole maps (`#/south`, `#/north`): pre-rendered topographic basemaps from `atlas.polemaps` (styles A glow / B bands / D hotspots × dark / moon-grey themes) with Artemis outlines as an SVG overlay.
 - Alternative considered: CesiumJS 1.145 with `Ellipsoid.MOON` and Cesium ion Moon Terrain (asset 2684829). Rejected for the MVP because it needs an ion token, the free tier is for non-commercial use only, and there's an unresolved ~2.5 km height offset against LOLA.
 - QA / notebooks: matplotlib (PyVista optional) to check overlays before they go on the web globe.
 
@@ -48,21 +48,22 @@ NASA_proj/
 ├── data/artemis/               # USGS region shapefiles, manual download (gitignored)
 ├── data/derived/               # predictions, mosaics (gitignored)
 ├── scripts/                    # fetch_data.sh, m0_benchmark.sh, predict_all.sh
-├── pipeline/atlas/             # Python package (crs, tiles, dem, colorize, regions, export_web, build)
+├── pipeline/atlas/             # Python package (crs, tiles, dem, colorize, regions, export_web, polemaps, build)
 ├── pipeline/tests/             # pytest; `-m data` tests need downloaded data
 ├── notebooks/                  # QA plots only
 └── web/                        # Vite + TS + three; public/data/ holds exported overlays
 ```
 
 ## Commands
-None have been run yet. These are the proposed M0 steps; update this section once they're confirmed to work.
 - Node: **24.21.0 via Homebrew** (`brew install node@24`, linked to /opt/homebrew/bin, which comes before the old v19 in /usr/local/bin).
 - Env (done 2026-09-24): `conda create -n ni-lfm python=3.12 -y && conda activate ni-lfm && pip install -e vendor/ni-lfm && pip install pyproj shapely pyogrio pytest ruff mypy && pip install -e .`. Installed: torch 2.12.1, terratorch 1.2.13, rasterio 1.5.1, huggingface-hub 1.33.0.
 - Download: `hf download nasa-ibm-ai4science/Ice-Prospectivity-NASA-IBM-Lunar-Foundation-Model --local-dir models/ice`, then `hf download nasa-ibm-ai4science/Sombench-Ice-Prospectivity-Regression --repo-type dataset --local-dir data/prospectivity_dataset`
 - Data: `conda run --no-capture-output -n ni-lfm bash scripts/fetch_data.sh` (~4.6 GB including the required 2.4 GB `backbone/checkpoint.pt`).
 - CPU eval (verified 2026-09-24, RMSE 0.0277, ~2.5 min): `conda run --no-capture-output -n ni-lfm bash scripts/m0_benchmark.sh`. It sources `scripts/cpu_config.sh`, which writes `models/ice/config_cpu.yaml`.
-- Web (verified 2026-09-25, run in `web/`): `npm ci`, `npm run dev`, `npm test` (vitest), `npm run typecheck`, `npm run lint` (eslint + prettier), `npm run build`. Playwright Chromium installed via `npx playwright install chromium`.
-- Build web assets (verified 2026-09-25, ~2 min, 36.7 MB): `conda run --no-capture-output -n ni-lfm python -m atlas.build {globe|north|south|regions|all}` → `web/public/data/`. Visual QA: `conda run -n ni-lfm python notebooks/qa_plot.py` → `notebooks/qa_south.png`.
+- Web (verified 2026-10-21, run in `web/`): `npm ci`, `npm run dev`, `npm test` (vitest, 68 tests), `npm run typecheck`, `npm run lint` (eslint + prettier), `npm run build` (dist 36 MB), `npm run e2e` (Playwright, 5 tests; builds and serves on :4173). Playwright Chromium installed via `npx playwright install chromium`.
+- Moon models (verified 2026-10-21): `bash scripts/optimize_models.sh` reads `Moon Renders/*_Small.glb` (gitignored) → `web/public/models/{color,grid,topo}.glb` (27 MB total).
+- Build web data (verified 2026-10-21): `conda run --no-capture-output -n ni-lfm python -m atlas.build {regions|maps|all}` → `web/public/data/regions.json` + `web/public/data/maps/{north,south}/` (12 WebP basemaps + meta.json, 8 MB). Legacy targets `globe|north|south` still exist but are no longer shipped.
+- Deploy: `.github/workflows/pages.yml` builds `web/` with `BASE_PATH=/<repo>/` and publishes to GitHub Pages on every push to `main`.
 - Python tests/lint/typecheck: `conda run -n ni-lfm pytest -q` (add `-m data` once data is fetched), `conda run -n ni-lfm ruff check pipeline`, `conda run -n ni-lfm mypy`
 
 ## Constraints
