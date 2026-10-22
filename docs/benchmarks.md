@@ -147,3 +147,20 @@ means, which are off by up to 1.4 km (Mons Mouton Plateau). Corrected centroids:
 
 Globe heights span −8,878 m to +10,504 m relative to R = 1,737.4 km. `ldem_4.tif` has no geotransform. Per SVS it is
 equirectangular (lon −180→180 left to right, lat +90 at the top). Task 11 must use that convention.
+
+## Web build and runtime (2026-10-21)
+
+New front end: NASA SVS GLB Moon + topographic pole maps (`docs/superpowers/plans/2026-10-21-nasa-moon-pole-maps-and-ship.md`).
+
+| Measure | Value |
+|---|---|
+| `web/dist` total | **36 MB** (budget ≤ 40 MB) |
+| Moon models (`models/`) | 27 MB: color 2.5 MB, grid 6.5 MB, topo 19 MB (topo mesh: 1.01M vertices; meshoptimizer could not simplify it, so only its texture was reduced to 4096 px) |
+| Pole basemaps (`data/maps/`) | 8.0 MB: 12 WebP at 1600², q90 |
+| JS + CSS (`assets/`) | 0.7 MB |
+| Lighthouse desktop (Chrome for Testing, Metal GPU) | Performance **99**, Accessibility **100**, Best Practices 96, SEO 91; FCP/LCP 0.7 s, TBT 50 ms, CLS 0 |
+| Orbit frame rate, 10 s drag (M1 Pro, ANGLE Metal) | Topography **120 fps**, Colour 240 fps (target ≥ 50) |
+| Pole-map accuracy (from the stitched mosaics, rebuilt by `atlas.build maps`) | North RMSE 0.0298, South RMSE 0.0236 (match Task 3) |
+| E2E (`npm run e2e`, SwiftShader) | 5 passed: renders + render toggle, info drawer, keyboard path to South map + style switch + back, North deep link, 390 px no horizontal scroll |
+| Text contrast (WCAG) | all ≥ 5.97:1 on `#000`; moon-theme scale label 10.97:1 on `#c9c5bd` |
+| Reduced motion | `prefers-reduced-motion: reduce` → consecutive frames identical (no rotation, pulse or twinkle) |

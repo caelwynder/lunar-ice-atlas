@@ -1,6 +1,11 @@
 import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
-export default tseslint.config(js.configs.recommended, ...tseslint.configs.strict, {
-  rules: { 'no-console': 'error' },
-});
+export default tseslint.config(
+  { ignores: ['dist/**', 'playwright-report/**', 'test-results/**'] },
+  js.configs.recommended,
+  ...tseslint.configs.strict,
+  {
+    rules: { 'no-console': 'error' },
+  },
+);

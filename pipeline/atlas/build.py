@@ -22,6 +22,7 @@ from atlas.crs import Pole
 from atlas.dem import read_pds_dem, slope_deg, to_grid
 from atlas.export_web import PoleLayers, export_pole
 from atlas.globe_assets import export_globe
+from atlas.polemaps import export_maps
 from atlas.regions import Region, StatLayers, load_regions, region_centroid, region_mask, region_stats
 from atlas.tiles import Grid, cap_grid, footprint, mosaic, parse_patch_id, patch_files
 
@@ -77,20 +78,29 @@ def build_regions() -> None:
     log.info("wrote %d regions", len(entries))
 
 
+def build_maps() -> None:
+    regions = load_regions(ARTEMIS_DIR)
+    for pole in ("north", "south"):
+        meta = export_maps(pole, pole_layers(pole), regions if pole == "south" else None, WEB_DATA_DIR / "maps" / pole)
+        log.info("exported %s maps (rmse %.4f, %d regions)", pole, meta["stats"]["rmse"], len(meta["regions"]))
+
+
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     parser = argparse.ArgumentParser(description="Build web assets for the Lunar Ice Atlas")
-    parser.add_argument("target", choices=["globe", "north", "south", "regions", "all"])
+    parser.add_argument("target", choices=["globe", "north", "south", "regions", "maps", "all"])
     target = parser.parse_args().target
-    if target in ("globe", "all"):
+    if target == "globe":
         export_globe(SVS_DIR / "ldem_4.tif", SVS_DIR / "lroc_color_16bit_srgb_4k.tif", WEB_DATA_DIR / "globe")
         log.info("exported globe")
     for pole in ("north", "south"):
-        if target in (pole, "all"):
+        if target == pole:
             export_pole(pole, pole_layers(pole), WEB_DATA_DIR / pole, stride=MESH_STRIDE, pixel_m=ICE_PIXEL_M)
             log.info("exported %s", pole)
     if target in ("regions", "all"):
         build_regions()
+    if target in ("maps", "all"):
+        build_maps()
 
 
 if __name__ == "__main__":

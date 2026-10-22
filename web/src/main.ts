@@ -1,32 +1,115 @@
 import './ui/styles.css';
-import { loadGlobe, loadPole, loadRegions } from './data/load';
-import { createAtlasScene } from './scene/scene';
-import { mountUi } from './ui/layers';
+import { loadRegions } from './data/load';
+import { type MapsMeta, loadMapsMeta } from './data/mapsSchema';
+import type { RegionsDoc } from './data/regionsSchema';
+import type { Pole } from './geo/polarStereo';
+import { type Route, onRoute, routeHash } from './router';
+import { type MoonScene, type RenderId, createMoonScene } from './scene/moonScene';
+import { type InfoPanel, mountInfoPanel } from './ui/infoPanel';
+import { mountPoleMap } from './ui/poleMap';
+import { createStatus } from './ui/status';
+import { mountTopBar } from './ui/topBar';
 
 const BASE = import.meta.env.BASE_URL;
-const EXAGGERATION = 6;
 
-async function start(): Promise<void> {
-  const canvas = document.querySelector<HTMLCanvasElement>('#moon');
-  const status = document.querySelector<HTMLElement>('#status');
-  if (!canvas || !status) throw new Error('index.html is missing #moon or #status');
-  try {
-    status.textContent = 'Loading lunar data…';
-    const [globe, north, south, regions] = await Promise.all([
-      loadGlobe(BASE),
-      loadPole(BASE, 'north'),
-      loadPole(BASE, 'south'),
-      loadRegions(BASE),
-    ]);
-    const scene = createAtlasScene(canvas, globe, [north, south], { exaggeration: EXAGGERATION });
-    scene.addRegionOutlines(regions);
-    mountUi({ scene, poles: [north, south], regions, exaggeration: EXAGGERATION });
-    status.hidden = true;
-  } catch (err) {
-    status.textContent = `Could not load the atlas data (${err instanceof Error ? err.message : String(err)}). Try reloading.`;
-    status.setAttribute('role', 'alert');
-    throw err;
-  }
+interface AtlasData {
+  regions: RegionsDoc;
+  maps: Record<Pole, MapsMeta>;
 }
 
-void start();
+function el<T extends HTMLElement>(selector: string): T {
+  const node = document.querySelector<T>(selector);
+  if (!node) throw new Error(`index.html is missing ${selector}`);
+  return node;
+}
+
+async function loadData(): Promise<AtlasData> {
+  const [regions, north, south] = await Promise.all([
+    loadRegions(BASE),
+    loadMapsMeta(BASE, 'north'),
+    loadMapsMeta(BASE, 'south'),
+  ]);
+  return { regions, maps: { north, south } };
+}
+
+const status = createStatus(el<HTMLElement>('#status'));
+
+const go = (route: Route): void => void (location.hash = routeHash(route));
+
+function mountLanding(scene: MoonScene, data: AtlasData): InfoPanel {
+  let shown: RenderId = 'topo';
+  let last: RenderId = 'topo';
+  const bar = mountTopBar(el('#top-bar'), {
+    initial: 'topo',
+    onRender: (id) => {
+      last = id;
+      scene
+        .setRender(id)
+        .then(() => void (last === id && (shown = id)))
+        .catch(() => last === id && bar.setRender(shown));
+    },
+    onInfo: () => {
+      if (panel.isOpen()) return panel.close();
+      panel.open();
+      bar.setInfoOpen(true);
+    },
+  });
+  const panel = mountInfoPanel(el('#info'), data.regions, () => {
+    bar.setInfoOpen(false);
+    document.querySelector<HTMLButtonElement>('.info-btn')?.focus();
+  });
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#pole-links button')) {
+    b.addEventListener('click', () => go({ view: 'map', pole: b.dataset['pole'] === 'north' ? 'north' : 'south' }));
+  }
+  return panel;
+}
+
+function router(scene: MoonScene, data: AtlasData, panel: InfoPanel): (route: Route) => void {
+  const stage = el<HTMLElement>('#stage');
+  const view = el<HTMLElement>('#map-view');
+  let unmount: (() => void) | null = null;
+  let prev: Route | null = null;
+  return (route) => {
+    unmount?.();
+    unmount = null;
+    const from = prev;
+    prev = route;
+    const onMap = route.view === 'map';
+    stage.hidden = onMap;
+    stage.inert = onMap;
+    view.hidden = !onMap;
+    scene.setRunning(!onMap);
+    if (route.view === 'moon') {
+      scene.resize();
+      if (from?.view === 'map')
+        document.querySelector<HTMLButtonElement>(`#pole-links [data-pole="${from.pole}"]`)?.focus();
+      return;
+    }
+    if (panel.isOpen()) panel.close();
+    const opts = { base: BASE, pole: route.pole, meta: data.maps[route.pole], regions: data.regions };
+    unmount = mountPoleMap(view, {
+      ...opts,
+      onBack: () => (from?.view === 'moon' ? history.back() : location.replace(routeHash({ view: 'moon' }))),
+    }).dispose;
+    view.scrollTop = 0;
+    view.querySelector<HTMLButtonElement>('.back')?.focus();
+  };
+}
+
+async function start(): Promise<void> {
+  const scene = createMoonScene(el<HTMLCanvasElement>('#moon'), {
+    reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
+    onStatus: status.show,
+    onPole: (pole) => go({ view: 'map', pole }),
+  });
+  scene.setRunning(true);
+  void scene.setRender('topo').catch(() => undefined);
+  const data = await loadData();
+  const panel = mountLanding(scene, data);
+  onRoute(router(scene, data, panel));
+}
+
+start().catch((err: unknown) => {
+  status.fail(`Could not start the atlas (${err instanceof Error ? err.message : String(err)}). Try reloading.`);
+  throw err;
+});
