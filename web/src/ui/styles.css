@@ -398,9 +398,10 @@ thead th {
 .map-pane {
   position: relative;
   flex: none;
-  height: 100vh;
+  align-self: flex-start;
+  width: min(100vh, 62.5vw);
+  height: auto;
   aspect-ratio: 1;
-  max-width: 62.5vw;
   overflow: hidden;
   background: #000;
 }
@@ -411,7 +412,7 @@ thead th {
   display: block;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: fill;
 }
 svg.regions {
   position: absolute;

@@ -7,6 +7,7 @@ import { type Route, onRoute, routeHash } from './router';
 import { type MoonScene, createMoonScene } from './scene/moonScene';
 import { type InfoPanel, mountInfoPanel } from './ui/infoPanel';
 import { mountPoleMap } from './ui/poleMap';
+import { createStatus } from './ui/status';
 import { mountTopBar } from './ui/topBar';
 
 const BASE = import.meta.env.BASE_URL;
@@ -31,11 +32,7 @@ async function loadData(): Promise<AtlasData> {
   return { regions, maps: { north, south } };
 }
 
-function showStatus(message: string | null): void {
-  const status = el<HTMLElement>('#status');
-  status.hidden = message === null;
-  status.textContent = message ?? '';
-}
+const status = createStatus(el<HTMLElement>('#status'));
 
 const go = (route: Route): void => void (location.hash = routeHash(route));
 
@@ -83,7 +80,7 @@ function router(scene: MoonScene, data: AtlasData, panel: InfoPanel): (route: Ro
 async function start(): Promise<void> {
   const scene = createMoonScene(el<HTMLCanvasElement>('#moon'), {
     reducedMotion: matchMedia('(prefers-reduced-motion: reduce)').matches,
-    onStatus: showStatus,
+    onStatus: status.show,
     onPole: (pole) => go({ view: 'map', pole }),
   });
   scene.setRunning(true);
@@ -94,6 +91,6 @@ async function start(): Promise<void> {
 }
 
 start().catch((err: unknown) => {
-  showStatus(`Could not start the atlas (${err instanceof Error ? err.message : String(err)}). Try reloading.`);
+  status.fail(`Could not start the atlas (${err instanceof Error ? err.message : String(err)}). Try reloading.`);
   throw err;
 });

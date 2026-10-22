@@ -1,4 +1,4 @@
-import { RUN_LOG } from '../content/runLog';
+import { CAVEATS, RUN_LOG } from '../content/runLog';
 import type { MapStyle, MapTheme, MapsMeta, MapsRegion } from '../data/mapsSchema';
 import type { Region, RegionsDoc } from '../data/regionsSchema';
 import type { Pole } from '../geo/polarStereo';
@@ -194,7 +194,8 @@ const COPY: Record<Pole, { k: string; title: string; lede: string }> = {
   },
 };
 const NOTE =
-  'Prospectivity is a model estimate, not measured ice. "Flat" = share of a region under the 8° landing-slope limit (240 m baseline). Predictions smoothed to ~5 km. Elevation: NASA LOLA, contours every 500 m.';
+  `Model outputs are "${CAVEATS[0]}" and "${CAVEATS[1]}" (NASA-IBM model cards). ` +
+  '"Flat" = share of a region under the 8° landing-slope limit (240 m baseline). Predictions smoothed to ~5 km. Elevation: NASA LOLA, contours every 500 m.';
 
 function linkHover(groups: Element[][]): void {
   const setActive = (i: number | null): void => {

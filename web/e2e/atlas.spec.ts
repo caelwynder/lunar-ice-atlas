@@ -80,3 +80,31 @@ test.describe('on a phone', () => {
     expect(Math.max(...widths)).toBeLessThanOrEqual(390);
   });
 });
+
+for (const [width, height] of [
+  [1440, 820],
+  [1280, 1024],
+  [1024, 768],
+] as const) {
+  test.describe(`at ${width}×${height}`, () => {
+    test.use({ viewport: { width, height } });
+
+    test('keeps every Artemis badge centred on its outline', async ({ page }) => {
+      await page.goto('/#/south');
+      await expect(page.locator('.badge')).toHaveCount(9);
+      const offsets = await page.evaluate(() => {
+        const polys = [...document.querySelectorAll('svg.regions polygon')];
+        const badges = [...document.querySelectorAll('.badge')];
+        return badges.map((b, i) => {
+          const bb = b.getBoundingClientRect();
+          const pb = polys[i]?.getBoundingClientRect();
+          if (!pb) return Infinity;
+          return Math.hypot(bb.x + bb.width / 2 - (pb.x + pb.width / 2), bb.y + bb.height / 2 - (pb.y + pb.height / 2));
+        });
+      });
+      expect(Math.max(...offsets)).toBeLessThan(8);
+      const pane = await page.locator('.map-pane').boundingBox();
+      expect(Math.abs((pane?.width ?? 0) - (pane?.height ?? 1))).toBeLessThan(2);
+    });
+  });
+}

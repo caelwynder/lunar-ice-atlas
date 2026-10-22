@@ -88,6 +88,15 @@ describe('mountPoleMap (south)', () => {
   });
 });
 
+describe('mountPoleMap caveats', () => {
+  it.each(['south', 'north'] as const)('quotes both model-card caveats on the %s map', (pole) => {
+    mount(pole);
+    const note = root.querySelector('.note')?.textContent ?? '';
+    expect(note).toContain('a knowledge-driven model, not measured ice');
+    expect(note).toContain('operational decision-making regarding lunar landing sites');
+  });
+});
+
 describe('mountPoleMap (north)', () => {
   it('shows pole statistics instead of regions', () => {
     mount('north');
