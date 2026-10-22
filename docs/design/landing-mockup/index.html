@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Lunar Ice Atlas — live mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#05070d;--ink:#e8ecf4;--muted:#8a93a8;--line:#232c45;--accent:#7fd4ff;--panel:#000;--drawer:max(25vw,340px)}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:'Tajawal',system-ui,sans-serif;overflow:hidden}
+  #stage{position:fixed;top:0;left:0;bottom:0;right:0;transition:right .45s cubic-bezier(.2,.7,.2,1)}
+  body.info-open #stage{right:var(--drawer)}
+  #c{position:absolute;inset:0;display:block;width:100%;height:100%}
+  .title{position:absolute;left:28px;top:24px}
+  .k{color:var(--accent);font-size:11px;letter-spacing:.16em;text-transform:uppercase}
+  .title .k{font-size:13px;letter-spacing:1.76px}
+  .big{font-size:48px;font-weight:700;margin-top:4px;line-height:1.2}
+  .seg{position:absolute;right:81px;top:18px;display:flex;gap:4px;border:1px solid #4a4a4a;border-radius:999px;padding:4px;background:#060810;--icon-hole:#060810}
+  .seg button{all:unset;cursor:pointer;position:relative;display:grid;place-items:center;width:44px;height:44px;border-radius:999px;color:var(--muted);transition:color .15s,background .15s}
+  .seg button:hover{color:var(--ink);background:#141b30}
+  .seg button:focus-visible,.info-btn:focus-visible,.close:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .seg button[aria-pressed=true]{background:var(--ink);color:var(--bg);--icon-hole:var(--ink)}
+  .seg svg,.info-btn svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .seg button::after{content:attr(data-tip);position:absolute;top:54px;left:50%;transform:translateX(-50%);font-size:12px;letter-spacing:.06em;color:var(--ink);background:rgba(12,17,32,.9);border:1px solid var(--line);border-radius:6px;padding:3px 8px;white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s}
+  .seg button:hover::after,.seg button:focus-visible::after{opacity:1}
+  .info-btn{all:unset;cursor:pointer;position:absolute;right:32px;top:22px;width:45px;height:45px;display:grid;place-items:center;border-radius:999px;border:1px solid #4a4a4a;background:#060810;color:var(--ink);transition:background .15s}
+  .info-btn:hover{background:#141b30}
+  .info-btn[aria-expanded=true]{background:var(--ink);color:var(--bg)}
+  #status{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:13px;color:var(--muted)}
+  #pick{position:absolute;left:28px;bottom:28px;width:280px;display:none;background:rgba(12,17,32,.82);backdrop-filter:blur(8px);border:1px solid var(--line);border-radius:10px;padding:16px;font-size:13px;line-height:1.6}
+
+  #info{position:fixed;top:0;right:0;bottom:0;width:var(--drawer);background:var(--panel);border-left:1px solid var(--line);transform:translateX(100%);transition:transform .45s cubic-bezier(.2,.7,.2,1);display:flex;flex-direction:column}
+  body.info-open #info{transform:none}
+  #info header{display:flex;align-items:flex-start;justify-content:space-between;padding:24px 24px 16px;border-bottom:1px solid var(--line)}
+  #info header .k{color:#0088ff}
+  #info h2{margin:4px 0 0;font-size:22px;font-weight:700}
+  .close{all:unset;cursor:pointer;width:32px;height:32px;line-height:32px;text-align:center;border-radius:8px;color:var(--muted);font-size:22px}
+  .close:hover{background:#1c2440;color:var(--ink)}
+  .scroll{overflow-y:auto;padding:8px 24px 32px;font-size:14px;line-height:1.6;color:#c9d0de}
+  .scroll section{padding:18px 0;border-bottom:1px solid #161d33}
+  .scroll section:last-child{border-bottom:0}
+  .scroll h3{margin:0 0 10px;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#fff;font-weight:500}
+  .scroll p{margin:0 0 8px}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+  .stat{background:#000;border:1px solid #fff;border-radius:8px;padding:10px 12px}
+  .stat b{display:block;font-size:22px;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .stat span{font-size:12px;color:var(--muted)}
+  table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+  th{text-align:left;font-weight:500;color:var(--muted);padding:4px 0;border-bottom:1px solid #1b2340}
+  td{padding:5px 0;border-bottom:1px solid #121a30}
+  td:not(:first-child),th:not(:first-child){text-align:right}
+  .bar{display:inline-block;height:6px;border-radius:3px;background:#3987e5;vertical-align:middle;margin-right:6px}
+  ul{margin:0;padding-left:18px}
+  li{margin:3px 0}
+  .tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid #2c3550;color:var(--muted);margin-left:6px;vertical-align:1px}
+  .done{color:#9be38a;border-color:#2d4a2a}
+  .next{color:#ffc46b;border-color:#4a3c22}
+  blockquote{margin:8px 0;padding:8px 12px;border-left:2px solid #ffc46b;background:#12131a;color:#e3dccb;font-size:13px}
+  .muted{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="c"></canvas>
+  <div class="title"><div class="k">NASA-IBM Lunar Foundation Model</div><div class="big">Lunar Ice Atlas</div></div>
+  <button class="info-btn" id="infoBtn" aria-label="Project information" aria-expanded="false" aria-controls="info">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5"/><circle cx="12" cy="7.6" r=".6" fill="currentColor"/></svg>
+  </button>
+  <div class="seg" role="group" aria-label="Moon render">
+    <button data-src="/files/moon_small.glb" aria-label="Colour render" data-tip="Colour"><svg viewBox="0 0 24 24" aria-hidden="true"><g stroke="none" opacity=".55">
+<path d="M12 12 12 3 A9 9 0 0 1 19.8 7.5Z" fill="#ff7a7a"/><path d="M12 12 19.8 7.5 A9 9 0 0 1 19.8 16.5Z" fill="#ffc46b"/>
+<path d="M12 12 19.8 16.5 A9 9 0 0 1 12 21Z" fill="#9be38a"/><path d="M12 12 12 21 A9 9 0 0 1 4.2 16.5Z" fill="#6fd6e8"/>
+<path d="M12 12 4.2 16.5 A9 9 0 0 1 4.2 7.5Z" fill="#7f9bff"/><path d="M12 12 4.2 7.5 A9 9 0 0 1 12 3Z" fill="#c78bff"/></g>
+<circle cx="12" cy="12" r="9"/><path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/><circle cx="12" cy="12" r="2.2" fill="var(--icon-hole)"/></svg></button>
+    <button data-src="/files/Moon_NASA_LRO_15k_Grid_Small.glb" aria-label="Grid render" data-tip="Grid"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M9.17 3.5v17M14.83 3.5v17M3.5 9.17h17M3.5 14.83h17"/></svg></button>
+    <button data-src="/files/Moon_NASA_LRO_8k_Topo_Small.glb" aria-pressed="true" aria-label="Topography render" data-tip="Topography"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 19C5.5 17.6 8.5 19.6 12 18.2S18 16.6 21.5 18.6"/><path d="M4 14.6C6.6 12.4 9.2 10.6 12 12.6S17 13.8 20 14.2"/><path d="M5.5 10.2C7.6 8.4 9.8 6 12 7.6S16 9.4 18.5 9.8"/><path d="M2.5 19 4 14.6 5.5 10.2M7.3 18.2 8.2 11.7 8.8 8.3M12 18.2V7.6M16.6 17.3 16.1 13.2 15.3 9.1M21.5 18.6 20 14.2 18.5 9.8"/></svg></button>
+  </div>
+  <div id="status">Loading Moon…</div>
+  <div id="pick"></div>
+</div>
+
+<aside id="info" aria-labelledby="infoTitle" aria-hidden="true" inert>
+  <header>
+    <div><div class="k">About this project</div><h2 id="infoTitle">Run log &amp; findings</h2></div>
+    <button class="close" id="infoClose" aria-label="Close information panel">×</button>
+  </header>
+  <div class="scroll">
+    <section>
+      <h3>Run log</h3>
+      <p>I ran NASA-IBM's fine-tuned <b>Ice-Prospectivity</b> model (NI-LFM, ViT-B backbone, released Sept 2026) locally on a laptop CPU, with no GPU, over every polar patch in the SomBench dataset.</p>
+      <div class="stats">
+        <div class="stat"><b>162</b><span>patches · 81 per pole</span></div>
+        <div class="stat"><b>13.4 min</b><span>≈4.9 s / patch · M1 Pro CPU</span></div>
+        <div class="stat"><b>0.0277</b><span>test RMSE · card 0.0293</span></div>
+        <div class="stat"><b>0.990</b><span>test R² · card 0.988</span></div>
+      </div>
+      <p class="muted">Test split = 25 held-out patches. MAE 0.0185 (card 0.0197). Peak memory 5.1 GB.</p>
+    </section>
+
+    <section>
+      <h3>Accuracy by pole</h3>
+      <table>
+        <tr><th>Area</th><th>Patches</th><th>RMSE</th></tr>
+        <tr><td>North pole</td><td>81</td><td>0.0298</td></tr>
+        <tr><td>South pole</td><td>81</td><td>0.0236</td></tr>
+        <tr><td>Test split (25 held out)</td><td>25</td><td>0.0277</td></tr>
+      </table>
+    </section>
+
+
+    <section>
+      <h3>Artemis candidate regions</h3>
+      <table id="regions"></table>
+    </section>
+
+
+
+    <section>
+      <h3>Credits</h3>
+      <p class="muted">Model outputs are "a knowledge-driven model, not measured ice" and "shouldn't substitute for instrumental measurements or operational decision-making regarding lunar landing sites" (NASA-IBM model cards).</p>
+      <p class="muted">Models: NASA &amp; IBM (Apache-2.0). Data: SomBench (CC-BY-4.0), NASA PDS LOLA. Moon renders: NASA's Goddard Space Flight Center / NASA SVS. Artemis regions: USGS, DOI 10.5066/P1MEQ6UK (CC0).</p>
+    </section>
+  </div>
+</aside>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const REGIONS = [
+  ['Slater Plain', 0.45, 51], ['Haworth', 0.41, 38], ['Nobile Rim 2', 0.39, 38],
+  ['Mons Mouton', 0.30, 33], ['Mons Mouton Plateau', 0.24, 37], ['Nobile Rim 1', 0.21, 17],
+  ['Peak near Cabeus B', 0.21, 4], ['de Gerlache Rim 2', 0.19, 25], ['Malapert Massif', 0.14, 12],
+];
+document.getElementById('regions').innerHTML = '<tr><th>Region</th><th>Prospectivity</th><th>Flat</th></tr>' +
+  REGIONS.map(([n, p, f]) => `<tr><td>${n}</td><td><span class="bar" style="width:${Math.round(p * 80)}px"></span>${p.toFixed(2)}</td><td>${f}%</td></tr>`).join('');
+
+const infoBtn = document.getElementById('infoBtn');
+const info = document.getElementById('info');
+function setInfo(open) {
+  document.body.classList.toggle('info-open', open);
+  infoBtn.setAttribute('aria-expanded', String(open));
+  info.setAttribute('aria-hidden', String(!open));
+  info.inert = !open;
+  if (open) document.getElementById('infoClose').focus();
+  else infoBtn.focus();
+}
+infoBtn.addEventListener('click', () => setInfo(infoBtn.getAttribute('aria-expanded') !== 'true'));
+document.getElementById('infoClose').addEventListener('click', () => setInfo(false));
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && document.body.classList.contains('info-open')) setInfo(false); });
+
+const CAP_DEG = 12;
+const stage = document.getElementById('stage');
+const canvas = document.getElementById('c');
+const status = document.getElementById('status');
+const pick = document.getElementById('pick');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 0.01, 100);
+camera.position.set(0, 1.4, 4.0);
+const controls = new OrbitControls(camera, canvas);
+controls.enableDamping = true;
+controls.minDistance = 1.6;
+controls.maxDistance = 8;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+const sun = new THREE.DirectionalLight(0xffffff, 2.6);
+sun.position.set(-4, 2, 5);
+scene.add(sun);
+
+const starUniforms = { uTime: { value: 0 }, uScale: { value: 1 } };
+function makeStars(count) {
+  const pos = new Float32Array(count * 3);
+  const bright = new Float32Array(count);
+  const phase = new Float32Array(count);
+  const speed = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const v = new THREE.Vector3().randomDirection().multiplyScalar(40 + Math.random() * 20);
+    pos.set([v.x, v.y, v.z], i * 3);
+    bright[i] = 0.6 + Math.random() ** 3 * 0.4;
+    phase[i] = Math.random() * Math.PI * 2;
+    speed[i] = 0.3 + Math.random() * 0.9;
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('aBright', new THREE.BufferAttribute(bright, 1));
+  g.setAttribute('aPhase', new THREE.BufferAttribute(phase, 1));
+  g.setAttribute('aSpeed', new THREE.BufferAttribute(speed, 1));
+  const m = new THREE.ShaderMaterial({
+    uniforms: starUniforms,
+    transparent: true,
+    depthWrite: false,
+    vertexShader: `
+      attribute float aBright; attribute float aPhase; attribute float aSpeed;
+      uniform float uTime; uniform float uScale;
+      varying float vAlpha;
+      void main() {
+        vAlpha = aBright * (0.7 + 0.3 * sin(uTime * aSpeed + aPhase));
+        gl_PointSize = (1.8 + aBright * 1.4) * uScale;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }`,
+    fragmentShader: `
+      varying float vAlpha;
+      void main() {
+        float d = length(gl_PointCoord - 0.5);
+        gl_FragColor = vec4(0.9, 0.94, 1.0, smoothstep(0.5, 0.0, d) * vAlpha);
+      }`,
+  });
+  return new THREE.Points(g, m);
+}
+scene.add(makeStars(2600));
+
+const moonHolder = new THREE.Group();
+scene.add(moonHolder);
+
+function makeCap(isNorth) {
+  const theta = THREE.MathUtils.degToRad(CAP_DEG);
+  const g = new THREE.Group();
+  const fill = new THREE.Mesh(
+    new THREE.SphereGeometry(1.012, 64, 8, 0, Math.PI * 2, isNorth ? 0 : Math.PI - theta, theta),
+    new THREE.MeshBasicMaterial({ color: 0x7fd4ff, transparent: true, opacity: 0.22, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
+  );
+  const y = Math.cos(theta) * 1.014 * (isNorth ? 1 : -1);
+  const r = Math.sin(theta) * 1.014;
+  const pts = Array.from({ length: 129 }, (_, i) => {
+    const a = (i / 128) * Math.PI * 2;
+    return new THREE.Vector3(Math.cos(a) * r, y, Math.sin(a) * r);
+  });
+  g.add(fill, new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0x9fe0ff })));
+  fill.userData.pole = isNorth ? 'north' : 'south';
+  return { group: g, fill };
+}
+const north = makeCap(true);
+const south = makeCap(false);
+scene.add(north.group, south.group);
+const pickables = [north.fill, south.fill];
+
+const loader = new GLTFLoader();
+const cache = new Map();
+
+function normalise(root) {
+  const box = new THREE.Box3().setFromObject(root);
+  const size = box.getSize(new THREE.Vector3());
+  root.position.sub(box.getCenter(new THREE.Vector3()));
+  const wrap = new THREE.Group();
+  wrap.add(root);
+  wrap.scale.setScalar(2 / Math.max(size.x, size.y, size.z));
+  return wrap;
+}
+
+function showMoon(src) {
+  if (cache.has(src)) { moonHolder.clear(); moonHolder.add(cache.get(src)); return; }
+  status.style.display = 'block';
+  status.textContent = 'Loading Moon…';
+  loader.load(src, (gltf) => {
+    const moon = normalise(gltf.scene);
+    cache.set(src, moon);
+    moonHolder.clear();
+    moonHolder.add(moon);
+    status.style.display = 'none';
+  }, (e) => {
+    if (e.total) status.textContent = `Loading Moon… ${Math.round((e.loaded / e.total) * 100)}%`;
+  }, (err) => {
+    status.textContent = 'Could not load this render: ' + err.message;
+  });
+}
+
+document.querySelectorAll('.seg button').forEach((b) => b.addEventListener('click', () => {
+  document.querySelectorAll('.seg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+  showMoon(b.dataset.src);
+}));
+showMoon('/files/Moon_NASA_LRO_8k_Topo_Small.glb');
+
+const ray = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+function hit(ev) {
+  const r = canvas.getBoundingClientRect();
+  ndc.set(((ev.clientX - r.left) / r.width) * 2 - 1, -((ev.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(ndc, camera);
+  return ray.intersectObjects(pickables)[0];
+}
+canvas.addEventListener('pointermove', (ev) => { canvas.style.cursor = hit(ev) ? 'pointer' : 'grab'; });
+let downAt = null;
+canvas.addEventListener('pointerdown', (ev) => { downAt = [ev.clientX, ev.clientY]; });
+canvas.addEventListener('pointerup', (ev) => {
+  if (!downAt || Math.hypot(ev.clientX - downAt[0], ev.clientY - downAt[1]) > 4) return;
+  const h = hit(ev);
+  if (!h) return;
+  const p = h.object.userData.pole;
+  pick.style.display = 'block';
+  pick.innerHTML = `<div class="k">${p === 'south' ? 'South pole · Artemis' : 'North pole'}</div>
+    In the real build this opens the new ${p} map: model predictions${p === 'south' ? ' and Artemis candidate landing regions' : ''}.`;
+});
+
+function resize() {
+  const w = stage.clientWidth;
+  const h = stage.clientHeight;
+  renderer.setSize(w, h, false);
+  camera.aspect = w / h;
+  camera.setViewOffset(w * 2, h * 2, 0, 0, w, h);
+  starUniforms.uScale.value = renderer.getPixelRatio();
+}
+new ResizeObserver(resize).observe(stage);
+resize();
+
+const clock = new THREE.Clock();
+renderer.setAnimationLoop(() => {
+  const t = clock.getElapsedTime();
+  starUniforms.uTime.value = t;
+  const o = 0.35 + 0.25 * (0.5 + 0.5 * Math.sin(t * 2));
+  north.fill.material.opacity = o;
+  south.fill.material.opacity = o;
+  moonHolder.rotation.y += 0.0008;
+  controls.update();
+  renderer.render(scene, camera);
+});
+</script>
+</body>
+</html>
