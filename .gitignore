@@ -1,5 +1,5 @@
 vendor/
-models/
+/models/
 backbone/
 /data/
 tb_logs/
