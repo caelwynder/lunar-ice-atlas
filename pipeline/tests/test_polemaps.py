@@ -68,6 +68,9 @@ def test_export_maps_writes_12_files_and_meta(tmp_path: Path) -> None:
         for theme in THEMES:
             with Image.open(tmp_path / f"{style}-{theme}.webp") as im:
                 assert im.size == (400, 400)
+            with Image.open(tmp_path / f"{style}-{theme}@2x.webp") as im:
+                assert im.size == (800, 800)
+    assert meta["hdSize"] == 800
     on_disk = json.loads((tmp_path / "meta.json").read_text())
     assert on_disk == meta
     assert meta["regions"] == []
@@ -77,6 +80,15 @@ def test_export_maps_writes_12_files_and_meta(tmp_path: Path) -> None:
     assert 0 <= stats["fracGe04"] <= 1 and stats["fracGe04"] >= stats["fracGe06"] >= stats["fracGe08"]
     assert stats["rmse"] == pytest.approx(0.01, abs=1e-3)
     assert meta["kmPerPx"] == pytest.approx(256 * ICE_PIXEL_M / 1000 / 400)
+
+
+def test_export_maps_writes_int16_heightmap(tmp_path: Path) -> None:
+    layers = _layers()
+    meta = export_maps("north", layers, None, tmp_path, grid=_grid(256), box=(0, 0, 256, 256), size=400, height_px=64)
+    heights = np.fromfile(tmp_path / "height.bin", dtype="<i2")
+    assert meta["height"] == {"file": "height.bin", "size": 64, "min": int(heights.min()), "max": int(heights.max())}
+    assert heights.size == 64 * 64
+    assert -2000 <= heights.min() < -1500 and 1500 < heights.max() <= 2000
 
 
 def test_export_maps_does_not_mutate_inputs(tmp_path: Path) -> None:

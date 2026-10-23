@@ -2,6 +2,7 @@
  "version": 1,
  "pole": "north",
  "size": 1600,
+ "hdSize": 3200,
  "kmPerPx": 0.381696,
  "polePx": [
   791.6,
@@ -29,6 +30,12 @@
   "fracGe08": 0.12538714368013895,
   "coverage": 0.9101453898352087,
   "rmse": 0.029815886169672012
+ },
+ "height": {
+  "file": "height.bin",
+  "size": 512,
+  "min": -4978,
+  "max": 2286
  },
  "regions": []
 }

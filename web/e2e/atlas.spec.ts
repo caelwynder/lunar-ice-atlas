@@ -74,6 +74,39 @@ test('a deep link opens the North Pole map directly', async ({ page }) => {
   await expect(page.locator('.basemap')).toHaveAttribute('src', /north\/b-dark\.webp$/);
 });
 
+test('the South Pole map zooms, pans and loads the sharper basemap', async ({ page }) => {
+  await page.goto('/#/south');
+  await expect(page.locator('.badge')).toHaveCount(9);
+  await expect(page.locator('.scale span')).toHaveText('100 km');
+  const pane = page.locator('.map-pane');
+  const box = await pane.boundingBox();
+  await page.mouse.move((box?.x ?? 0) + 300, (box?.y ?? 0) + 300);
+  for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -200);
+  await expect(page.locator('.basemap')).toHaveAttribute('src', /b-dark@2x\.webp$/, { timeout: 15_000 });
+  await expect(page.locator('.scale span')).not.toHaveText('100 km');
+  const before = await page.locator('.map-stage').getAttribute('style');
+  await page.mouse.down();
+  await page.mouse.move((box?.x ?? 0) + 150, (box?.y ?? 0) + 200, { steps: 5 });
+  await page.mouse.up();
+  expect(await page.locator('.map-stage').getAttribute('style')).not.toBe(before);
+  await page.getByRole('button', { name: 'Reset view' }).click();
+  await expect(page.locator('.scale span')).toHaveText('100 km');
+});
+
+test('the 3D terrain view is optional and draws the regions', async ({ page }) => {
+  await page.goto('/#/south');
+  await expect(page.getByRole('radio', { name: 'Topographic' })).toBeChecked();
+  await page.getByRole('radio', { name: '3D terrain' }).check();
+  await expect(page.locator('.map-status')).toBeHidden({ timeout: 30_000 });
+  await expect(page.locator('canvas.terrain')).toBeVisible();
+  await expect(page.locator('.tbadge:visible')).not.toHaveCount(0);
+  const shot = await page.locator('canvas.terrain').screenshot();
+  expect(shot.byteLength).toBeGreaterThan(50_000);
+  await page.getByRole('radio', { name: 'Topographic' }).check();
+  await expect(page.locator('canvas.terrain')).toBeHidden();
+  await expect(page.locator('.basemap')).toBeVisible();
+});
+
 test.describe('on a phone', () => {
   test.use({ viewport: { width: 390, height: 844 } });
 

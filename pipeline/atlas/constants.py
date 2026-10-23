@@ -26,6 +26,7 @@ ARTEMIS_DIR = DATA_DIR / "artemis"
 WEB_DATA_DIR = ROOT / "web" / "public" / "data"
 
 MAP_PX = 1600
+HEIGHT_PX = 512
 SOUTH_MAP_BOX = (214, 19, 2223, 2028)
 BAND_LEVELS = (0.4, 0.6, 0.8)
 HOTSPOT_PCT = 85.0

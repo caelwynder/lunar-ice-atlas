@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { parseMapsMeta } from './mapsSchema';
+import { parseHeights, parseMapsMeta } from './mapsSchema';
 import { DataError } from './schema';
 
 const real = (pole: string): Record<string, unknown> =>
@@ -18,6 +18,10 @@ describe('parseMapsMeta', () => {
     expect(meta.regions).toHaveLength(9);
     expect(meta.styles).toEqual(['a', 'b', 'd']);
     expect(meta.themes).toEqual(['dark', 'moon']);
+    expect(meta.hdSize).toBe(3200);
+    expect(meta.height.file).toBe('height.bin');
+    expect(meta.height.size).toBe(512);
+    expect(meta.height.min).toBeLessThan(meta.height.max);
   });
 
   it('parses the real north meta with no regions', () => {
@@ -40,5 +44,18 @@ describe('parseMapsMeta', () => {
 
   it('rejects an unknown pole', () => {
     expect(() => parseMapsMeta({ ...real('north'), pole: 'east' })).toThrow(DataError);
+  });
+});
+
+describe('parseHeights', () => {
+  it('reads little-endian int16 metres', () => {
+    const buf = new ArrayBuffer(8);
+    const view = new DataView(buf);
+    [-1200, 0, 35, 4000].forEach((v, i) => view.setInt16(i * 2, v, true));
+    expect([...parseHeights(buf, 2)]).toEqual([-1200, 0, 35, 4000]);
+  });
+
+  it('rejects a buffer that does not match the grid size', () => {
+    expect(() => parseHeights(new ArrayBuffer(6), 2)).toThrow(DataError);
   });
 });

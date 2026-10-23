@@ -1,5 +1,5 @@
 import type { Pole } from '../geo/polarStereo';
-import { getJson } from './load';
+import { fetchOk, getJson } from './load';
 import { DataError, arr, num, obj, str } from './schema';
 
 export type MapStyle = 'a' | 'b' | 'd';
@@ -20,9 +20,16 @@ export interface MapsStats {
   coverage: number;
   rmse: number;
 }
+export interface MapsHeight {
+  file: string;
+  size: number;
+  min: number;
+  max: number;
+}
 export interface MapsMeta {
   pole: Pole;
   size: number;
+  hdSize: number;
   kmPerPx: number;
   polePx: Px;
   levels: number[];
@@ -30,6 +37,7 @@ export interface MapsMeta {
   styles: MapStyle[];
   themes: MapTheme[];
   stats: MapsStats;
+  height: MapsHeight;
   regions: MapsRegion[];
 }
 
@@ -64,11 +72,22 @@ function parseStats(v: unknown): MapsStats {
   return Object.fromEntries(keys.map((k) => [k, num(o[k], `stats.${k}`)])) as unknown as MapsStats;
 }
 
+function parseHeight(v: unknown): MapsHeight {
+  const o = obj(v, 'height');
+  return {
+    file: str(o['file'], 'height.file'),
+    size: num(o['size'], 'height.size'),
+    min: num(o['min'], 'height.min'),
+    max: num(o['max'], 'height.max'),
+  };
+}
+
 export function parseMapsMeta(json: unknown): MapsMeta {
   const o = obj(json, 'maps meta.json');
   return {
     pole: oneOf(o['pole'], ['north', 'south'] as const, 'pole'),
     size: num(o['size'], 'size'),
+    hdSize: num(o['hdSize'], 'hdSize'),
     kmPerPx: num(o['kmPerPx'], 'kmPerPx'),
     polePx: px(o['polePx'], 'polePx'),
     levels: arr(o['levels'], 'levels').map((l, i) => num(l, `levels[${i}]`)),
@@ -76,9 +95,22 @@ export function parseMapsMeta(json: unknown): MapsMeta {
     styles: arr(o['styles'], 'styles').map((s, i) => oneOf(s, STYLES, `styles[${i}]`)),
     themes: arr(o['themes'], 'themes').map((t, i) => oneOf(t, THEMES, `themes[${i}]`)),
     stats: parseStats(o['stats']),
+    height: parseHeight(o['height']),
     regions: arr(o['regions'], 'regions').map((r, i) => parseRegion(r, `regions[${i}]`)),
   };
 }
 
 export const loadMapsMeta = async (base: string, pole: Pole): Promise<MapsMeta> =>
   parseMapsMeta(await getJson(`${base}data/maps/${pole}/meta.json`));
+
+export function parseHeights(buf: ArrayBuffer, size: number): Int16Array {
+  if (buf.byteLength !== size * size * 2) throw new DataError(`heights: ${buf.byteLength} bytes, expected ${size}²×2`);
+  const view = new DataView(buf);
+  return Int16Array.from({ length: size * size }, (_, i) => view.getInt16(i * 2, true));
+}
+
+export const loadHeights = async (base: string, meta: MapsMeta): Promise<Int16Array> =>
+  parseHeights(
+    await (await fetchOk(`${base}data/maps/${meta.pole}/${meta.height.file}`)).arrayBuffer(),
+    meta.height.size,
+  );

@@ -408,6 +408,109 @@ thead th {
 .map-pane[data-theme='moon'] {
   background: #c9c5bd;
 }
+.map-pane {
+  touch-action: pan-y;
+  user-select: none;
+}
+.map-pane.is-zoomed {
+  cursor: grab;
+  touch-action: none;
+}
+.map-pane.is-dragging {
+  cursor: grabbing;
+}
+.map-pane:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.map-pane.is-3d,
+.map-pane.is-3d[data-theme='moon'] {
+  background: #000;
+  touch-action: none;
+}
+.map-stage {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+.map-stage[hidden],
+.terrain[hidden],
+.terrain-labels[hidden],
+.scale[hidden],
+.zoom-controls button[hidden] {
+  display: none;
+}
+.basemap {
+  -webkit-user-drag: none;
+}
+.terrain {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.terrain-labels {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.zoom-controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.zoom-controls button {
+  all: unset;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--control-line);
+  border-radius: 18px;
+  background: rgba(6, 8, 16, 0.85);
+  color: #fff;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+.zoom-controls button:hover {
+  background: #141b30;
+}
+.zoom-controls button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.map-hint {
+  position: absolute;
+  right: 16px;
+  bottom: 12px;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #c9d0de;
+  font-size: 11px;
+  pointer-events: none;
+}
+.map-status {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  margin: 0;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(6, 8, 16, 0.9);
+  color: #fff;
+  font-size: 13px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
 .basemap {
   display: block;
   width: 100%;
@@ -441,7 +544,8 @@ svg.regions polygon.is-active,
   stroke-width: 3;
   fill: rgba(255, 196, 107, 0.2);
 }
-.badge {
+.badge,
+.tbadge {
   all: unset;
   position: absolute;
   display: grid;
@@ -454,10 +558,18 @@ svg.regions polygon.is-active,
   color: #fff;
   font-size: 13px;
   font-weight: 700;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(calc(1 / var(--zoom, 1)));
   cursor: pointer;
 }
-.badge.is-active {
+.tbadge {
+  transform: translate(-50%, -50%);
+  pointer-events: auto;
+}
+.tbadge[hidden] {
+  display: none;
+}
+.badge.is-active,
+.tbadge.is-active {
   background: #ffc46b;
   border-color: #000;
   color: #000;
@@ -479,7 +591,8 @@ svg.regions polygon.is-active,
   font-weight: 700;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  transform: translate(-7px, -50%);
+  transform: translate(-7px, -50%) scale(calc(1 / var(--zoom, 1)));
+  transform-origin: 7px 50%;
   pointer-events: none;
 }
 .pole-tag i {

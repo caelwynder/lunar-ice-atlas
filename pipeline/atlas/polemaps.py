@@ -23,6 +23,7 @@ from atlas.constants import (  # noqa: E402
     CAP_EDGE_LAT_DEG,
     FALSE_EASTING,
     FALSE_NORTHING,
+    HEIGHT_PX,
     HOTSPOT_PCT,
     MAP_PX,
     SMOOTH_KM,
@@ -180,25 +181,41 @@ def _region_px(region: Region, pole: Pole, grid: Grid, box: Box, size: int) -> d
     }
 
 
-def export_maps(pole: Pole, layers: PoleLayers, regions: list[Region] | None, out_dir: Path,
-                grid: Grid | None = None, box: Box | None = None, size: int = MAP_PX) -> dict[str, Any]:
-    grid = grid or cap_grid(pole)
-    box = box or (SOUTH_MAP_BOX if pole == "south" else (0, 0, grid.width, grid.height))
-    dem = _resize(np.nan_to_num(_crop(layers.dem, box), nan=float(np.nanmedian(layers.dem))), size,
-                  Image.Resampling.BICUBIC)
-    extent_km = (box[2] - box[0]) * grid.transform.a / 1000
-    field = smooth_field(_crop(layers.pred, box), size, max(1, round(size * SMOOTH_KM / extent_km)))
-    thr = hotspot_threshold(field, HOTSPOT_PCT)
-    out_dir.mkdir(parents=True, exist_ok=True)
+def _render_set(dem: np.ndarray, pred: np.ndarray, extent_km: float, size: int, suffix: str, out_dir: Path,
+                thr: float | None = None) -> float:
+    dem_px = _resize(dem, size, Image.Resampling.BICUBIC)
+    field = smooth_field(pred, size, max(1, round(size * SMOOTH_KM / extent_km)))
+    thr = hotspot_threshold(field, HOTSPOT_PCT) if thr is None else thr
     for style in STYLES:
         for theme_id in THEME_IDS:
-            render_map(style, theme_id, dem, field, thr, out_dir / f"{style}-{theme_id}.webp")
+            render_map(style, theme_id, dem_px, field, thr, out_dir / f"{style}-{theme_id}{suffix}.webp")
+    return thr
+
+
+def export_height(dem: np.ndarray, size: int, out: Path) -> dict[str, Any]:
+    heights = np.round(_resize(dem, size, Image.Resampling.BOX)).astype("<i2")
+    heights.tofile(out)
+    return {"file": out.name, "size": size, "min": int(heights.min()), "max": int(heights.max())}
+
+
+def export_maps(pole: Pole, layers: PoleLayers, regions: list[Region] | None, out_dir: Path,
+                grid: Grid | None = None, box: Box | None = None, size: int = MAP_PX,
+                height_px: int = HEIGHT_PX) -> dict[str, Any]:
+    grid = grid or cap_grid(pole)
+    box = box or (SOUTH_MAP_BOX if pole == "south" else (0, 0, grid.width, grid.height))
+    dem = np.nan_to_num(_crop(layers.dem, box), nan=float(np.nanmedian(layers.dem)))
+    pred = _crop(layers.pred, box)
+    extent_km = (box[2] - box[0]) * grid.transform.a / 1000
+    out_dir.mkdir(parents=True, exist_ok=True)
+    thr = _render_set(dem, pred, extent_km, size, "", out_dir)
+    _render_set(dem, pred, extent_km, size * 2, "@2x", out_dir, thr)
     pole_px = to_map_px(np.array([[FALSE_EASTING, FALSE_NORTHING]]), grid, box, size)[0]
     meta: dict[str, Any] = {
-        "version": 1, "pole": pole, "size": size,
+        "version": 1, "pole": pole, "size": size, "hdSize": size * 2,
         "kmPerPx": extent_km / size,
         "polePx": np.round(pole_px, 1).tolist(), "levels": list(BAND_LEVELS), "hotspot": round(thr, 3),
         "styles": list(STYLES), "themes": list(THEME_IDS), "stats": _stats(layers, grid),
+        "height": export_height(dem, height_px, out_dir / "height.bin"),
         "regions": [_region_px(r, pole, grid, box, size) for r in regions or []],
     }
     (out_dir / "meta.json").write_text(json.dumps(meta, indent=1))

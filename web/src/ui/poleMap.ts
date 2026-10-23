@@ -4,6 +4,7 @@ import type { Region, RegionsDoc } from '../data/regionsSchema';
 import type { Pole } from '../geo/polarStereo';
 import { el, fmt, pct, svg } from './dom';
 import { ICONS } from './icons';
+import { type MapMode, type TerrainLoader, createMapPane } from './mapPane';
 
 export interface PoleMapOptions {
   base: string;
@@ -11,18 +12,19 @@ export interface PoleMapOptions {
   meta: MapsMeta;
   regions: RegionsDoc;
   onBack(): void;
+  loadTerrain?: TerrainLoader | undefined;
 }
 
 const STYLE_LABEL: Record<MapStyle, string> = { a: 'Glow', b: 'Bands', d: 'Hotspots' };
 const THEME_LABEL: Record<MapTheme, string> = { dark: 'Dark', moon: 'Moon grey' };
+const MODE_LABEL: Record<MapMode, string> = { '2d': 'Topographic', '3d': '3D terrain' };
+const MODES: readonly MapMode[] = ['2d', '3d'];
 const THEME_BANDS: Record<MapTheme, readonly [string, string, string]> = {
   dark: ['#256abf', '#6da7ec', '#cde2fb'],
   moon: ['#3987e5', '#256abf', '#184f95'],
 };
 const PREF = { style: 'atlas.mapStyle', theme: 'atlas.mapTheme' } as const;
-const SCALE_KM = 100;
 const BAR_PX = 90;
-const SVG_NS = 'http://www.w3.org/2000/svg';
 
 interface Ranked {
   map: MapsRegion;
@@ -50,50 +52,6 @@ function rank(meta: MapsMeta, doc: RegionsDoc): Ranked[] {
   const byId = new Map(doc.regions.map((r) => [r.id, r]));
   const score = (r: Ranked): number => r.region?.stats.predMean ?? -1;
   return meta.regions.map((map) => ({ map, region: byId.get(map.id) })).sort((a, b) => score(b) - score(a));
-}
-
-const at = (meta: MapsMeta, [x, y]: [number, number]): string =>
-  `left:${(x / meta.size) * 100}%;top:${(y / meta.size) * 100}%`;
-
-function overlay(meta: MapsMeta, ranked: Ranked[]): { svgEl: SVGSVGElement; polygons: SVGPolygonElement[] } {
-  const svgEl = document.createElementNS(SVG_NS, 'svg');
-  svgEl.setAttribute('class', 'regions');
-  svgEl.setAttribute('viewBox', `0 0 ${meta.size} ${meta.size}`);
-  svgEl.setAttribute('aria-hidden', 'true');
-  const polygons = ranked.map(({ map }) => {
-    const poly = document.createElementNS(SVG_NS, 'polygon');
-    poly.setAttribute('points', map.px.map(([x, y]) => `${x},${y}`).join(' '));
-    svgEl.append(poly);
-    return poly;
-  });
-  return { svgEl, polygons };
-}
-
-function mapPane(meta: MapsMeta, ranked: Ranked[]) {
-  const img = el('img', { class: 'basemap', width: String(meta.size), height: String(meta.size), decoding: 'async' });
-  const { svgEl, polygons } = overlay(meta, ranked);
-  const badges = ranked.map(({ map }, i) =>
-    el(
-      'button',
-      { type: 'button', class: 'badge', style: at(meta, map.centroidPx), 'aria-label': `${i + 1}. ${map.name}` },
-      String(i + 1),
-    ),
-  );
-  const poleName = meta.pole === 'south' ? 'South Pole' : 'North Pole';
-  const poleTag = el('div', { class: 'pole-tag', style: at(meta, meta.polePx) }, el('i', {}), poleName);
-  const scaleWidth = `${(SCALE_KM / meta.kmPerPx / meta.size) * 100}%`;
-  const scale = el(
-    'div',
-    { class: 'scale' },
-    el('div', { class: 'scale-bar', style: `width:${scaleWidth}` }),
-    el('span', {}, `${SCALE_KM} km`),
-  );
-  const error = el('p', { class: 'map-error', role: 'alert' }, 'Could not load this map. Try reloading.');
-  error.hidden = true;
-  img.addEventListener('error', () => (error.hidden = false));
-  img.addEventListener('load', () => (error.hidden = true));
-  const pane = el('div', { class: 'map-pane' }, img, svgEl, ...badges, poleTag, scale, error);
-  return { pane, img, polygons, badges };
 }
 
 function radios<T extends string>(
@@ -202,9 +160,10 @@ const NOTE =
   `Model outputs are "${CAVEATS[0]}" and "${CAVEATS[1]}" (NASA-IBM model cards). ` +
   '"Flat" = share of a region under the 8° landing-slope limit (240 m baseline). Predictions smoothed to ~5 km. Elevation: NASA LOLA, contours every 500 m.';
 
-function linkHover(groups: Element[][]): void {
+function linkHover(groups: Element[][], onActive: (i: number | null) => void): (i: number | null) => void {
   const setActive = (i: number | null): void => {
     for (const g of groups) g.forEach((node, j) => node.classList.toggle('is-active', j === i));
+    onActive(i);
   };
   for (const g of groups) {
     g.forEach((node, i) => {
@@ -214,6 +173,7 @@ function linkHover(groups: Element[][]): void {
       node.addEventListener('focusout', () => setActive(null));
     });
   }
+  return setActive;
 }
 
 export function mountPoleMap(root: HTMLElement, opts: PoleMapOptions): { dispose(): void } {
@@ -221,21 +181,35 @@ export function mountPoleMap(root: HTMLElement, opts: PoleMapOptions): { dispose
   let style = readPref<MapStyle>(PREF.style, meta.styles, 'b');
   let theme = readPref<MapTheme>(PREF.theme, meta.themes, 'dark');
   const ranked = rank(meta, opts.regions);
-  const { pane, img, polygons, badges } = mapPane(meta, ranked);
+  let hover: (i: number | null) => void = () => undefined;
+  const map = createMapPane({
+    base: opts.base,
+    meta,
+    regions: ranked.map((r) => r.map),
+    onHover: (i) => hover(i),
+    loadTerrain: opts.loadTerrain,
+  });
   const legend = el('div', { class: 'legend' });
   const update = (): void => {
-    img.src = `${opts.base}data/maps/${pole}/${style}-${theme}.webp`;
-    img.alt = `${COPY[pole].k} map: ${STYLE_LABEL[style].toLowerCase()} view of predicted ice prospectivity over topography`;
-    pane.dataset['theme'] = theme;
+    const alt = `${COPY[pole].k} map: ${STYLE_LABEL[style].toLowerCase()} view of predicted ice prospectivity over topography`;
+    map.setImage(style, theme, alt);
     legend.replaceChildren(...legendFor(style, theme, meta));
     writePref(PREF.style, style);
     writePref(PREF.theme, theme);
   };
   const back = el('button', { type: 'button', class: 'back' }, svg(ICONS.back), 'Back to Moon');
   back.addEventListener('click', () => opts.onBack());
+  const modes = radios('map-view', 'Map view', MODES, MODE_LABEL, '2d', (v) => {
+    void map.setMode(v).then((ok) => {
+      if (ok) return;
+      const flat = modes.querySelector<HTMLInputElement>('input[value="2d"]');
+      if (flat) flat.checked = true;
+    });
+  });
   const controls = el(
     'div',
     { class: 'map-controls' },
+    modes,
     radios('map-style', 'Map style', meta.styles, STYLE_LABEL, style, (v) => ((style = v), update())),
     radios('map-theme', 'Map theme', meta.themes, THEME_LABEL, theme, (v) => ((theme = v), update())),
   );
@@ -257,12 +231,17 @@ export function mountPoleMap(root: HTMLElement, opts: PoleMapOptions): { dispose
   if (pole === 'south') {
     const { table, rows } = regionTable(ranked);
     side.append(el('section', { class: 'side-section' }, table));
-    linkHover([polygons, badges, rows]);
+    hover = linkHover([map.polygons, map.badges, rows], (i) => map.setActive(i));
   } else {
     side.append(northStats(meta));
   }
   side.append(el('p', { class: 'note' }, NOTE));
-  root.replaceChildren(el('div', { class: 'pole-map' }, pane, side));
+  root.replaceChildren(el('div', { class: 'pole-map' }, map.pane, side));
   update();
-  return { dispose: () => root.replaceChildren() };
+  return {
+    dispose: () => {
+      map.dispose();
+      root.replaceChildren();
+    },
+  };
 }
