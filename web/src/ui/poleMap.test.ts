@@ -50,7 +50,7 @@ describe('mountPoleMap (south)', () => {
     mount('south');
     expect(root.querySelectorAll('.badge')).toHaveLength(9);
     expect(root.querySelectorAll('svg.regions polygon')).toHaveLength(9);
-    expect(src()).toBe('/data/maps/south/b-dark.webp');
+    expect(src()).toBe('/data/maps/south/b-moon.webp');
   });
 
   it('ranks regions by predicted prospectivity', () => {
@@ -67,10 +67,10 @@ describe('mountPoleMap (south)', () => {
       '0.8 – 1',
     ]);
     pick('Hotspots');
-    expect(src()).toBe('/data/maps/south/d-dark.webp');
-    expect(root.querySelector('.legend')?.textContent).toContain(`≥ ${META.south.hotspot.toFixed(2)}`);
-    pick('Moon grey');
     expect(src()).toBe('/data/maps/south/d-moon.webp');
+    expect(root.querySelector('.legend')?.textContent).toContain(`≥ ${META.south.hotspot.toFixed(2)}`);
+    pick('Dark');
+    expect(src()).toBe('/data/maps/south/d-dark.webp');
     pick('Glow');
     expect(root.querySelector('.legend .ramp')).not.toBeNull();
   });
@@ -105,11 +105,11 @@ describe('mountPoleMap (south)', () => {
   it('remembers the chosen style and theme across visits', () => {
     const first = mount('south');
     pick('Hotspots');
-    pick('Moon grey');
+    pick('Dark');
     first.dispose();
     expect(root.childElementCount).toBe(0);
     mount('north');
-    expect(src()).toBe('/data/maps/north/d-moon.webp');
+    expect(src()).toBe('/data/maps/north/d-dark.webp');
   });
 
   it('highlights the matching outline when a list row is hovered', () => {
@@ -144,7 +144,7 @@ describe('mountPoleMap (north)', () => {
     expect(root.querySelectorAll('.badge')).toHaveLength(0);
     expect(root.querySelector('h1')?.textContent).toBe('Predicted ice prospectivity');
     expect(root.textContent).toContain(`${Math.round(META.north.stats.fracGe04 * 100)}%`);
-    expect(src()).toBe('/data/maps/north/b-dark.webp');
+    expect(src()).toBe('/data/maps/north/b-moon.webp');
   });
 
   it('describes cap shares as a share of the area the model covers', () => {
@@ -165,33 +165,34 @@ describe('mountPoleMap zoom and 3D', () => {
     expect(root.querySelector<HTMLElement>('.map-stage')?.style.transform).toContain('scale(1)');
   });
 
-  it('opens on the topographic map and toggles the 3D terrain with the chosen style', async () => {
+  it('opens on the 3D terrain with the chosen style and toggles to the topographic map', async () => {
     const view = fakeTerrain();
     const loader = vi.fn<TerrainLoader>(() => Promise.resolve(view));
     mount('south', vi.fn(), loader);
-    expect(checked('map-view')).toBe('Topographic');
-    expect(loader).not.toHaveBeenCalled();
-    pick('3D terrain');
+    expect(checked('map-view')).toBe('3D terrain');
     await flush();
     expect(loader).toHaveBeenCalledOnce();
     expect(loader.mock.calls[0]?.[1].outlines).toHaveLength(9);
-    expect(view.setTexture).toHaveBeenCalledWith('/data/maps/south/b-dark.webp');
+    expect(view.setTexture).toHaveBeenCalledWith('/data/maps/south/b-moon.webp');
     expect(view.setRunning).toHaveBeenLastCalledWith(true);
     expect(root.querySelector<HTMLElement>('.map-stage')?.hidden).toBe(true);
     expect(root.querySelector<HTMLCanvasElement>('canvas.terrain')?.hidden).toBe(false);
-    pick('Moon grey');
+    pick('Dark');
     await flush();
-    expect(view.setTexture).toHaveBeenLastCalledWith('/data/maps/south/b-moon.webp');
+    expect(view.setTexture).toHaveBeenLastCalledWith('/data/maps/south/b-dark.webp');
     pick('Topographic');
     await flush();
     expect(root.querySelector<HTMLElement>('.map-stage')?.hidden).toBe(false);
     expect(view.setRunning).toHaveBeenLastCalledWith(false);
+    pick('3D terrain');
+    await flush();
+    expect(loader).toHaveBeenCalledOnce();
+    expect(root.querySelector<HTMLCanvasElement>('canvas.terrain')?.hidden).toBe(false);
   });
 
   it('highlights the 3D outline when a list row is hovered', async () => {
     const view = fakeTerrain();
     mount('south', vi.fn(), () => Promise.resolve(view));
-    pick('3D terrain');
     await flush();
     root.querySelectorAll('.region-list tbody tr')[2]?.dispatchEvent(new MouseEvent('mouseenter'));
     await flush();
@@ -201,7 +202,6 @@ describe('mountPoleMap zoom and 3D', () => {
 
   it('falls back to the topographic map when 3D cannot load', async () => {
     mount('north', vi.fn(), () => Promise.reject(new Error('no webgl')));
-    pick('3D terrain');
     await flush();
     await flush();
     expect(checked('map-view')).toBe('Topographic');
@@ -212,7 +212,6 @@ describe('mountPoleMap zoom and 3D', () => {
   it('stops the 3D view when the map is closed', async () => {
     const view = fakeTerrain();
     const map = mount('south', vi.fn(), () => Promise.resolve(view));
-    pick('3D terrain');
     await flush();
     map.dispose();
     await flush();

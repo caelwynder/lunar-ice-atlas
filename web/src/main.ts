@@ -5,6 +5,7 @@ import type { RegionsDoc } from './data/regionsSchema';
 import type { Pole } from './geo/polarStereo';
 import { type Route, onRoute, routeHash } from './router';
 import { type MoonScene, type RenderId, createMoonScene } from './scene/moonScene';
+import { type Footer, mountFooter } from './ui/footer';
 import { type InfoPanel, mountInfoPanel } from './ui/infoPanel';
 import { mountPoleMap } from './ui/poleMap';
 import { createStatus } from './ui/status';
@@ -58,9 +59,6 @@ function mountLanding(scene: MoonScene, data: AtlasData): InfoPanel {
     bar.setInfoOpen(false);
     document.querySelector<HTMLButtonElement>('.info-btn')?.focus();
   });
-  for (const b of document.querySelectorAll<HTMLButtonElement>('#pole-links button')) {
-    b.addEventListener('click', () => go({ view: 'map', pole: b.dataset['pole'] === 'north' ? 'north' : 'south' }));
-  }
   return panel;
 }
 
@@ -69,6 +67,8 @@ function router(scene: MoonScene, data: AtlasData, panel: InfoPanel): (route: Ro
   const view = el<HTMLElement>('#map-view');
   let unmount: (() => void) | null = null;
   let prev: Route | null = null;
+  let back = (): void => go({ view: 'moon' });
+  const footer: Footer = mountFooter(el('#site-footer'), { onMoon: () => back() });
   return (route) => {
     unmount?.();
     unmount = null;
@@ -79,18 +79,16 @@ function router(scene: MoonScene, data: AtlasData, panel: InfoPanel): (route: Ro
     stage.inert = onMap;
     view.hidden = !onMap;
     scene.setRunning(!onMap);
+    footer.setView(route.view);
     if (route.view === 'moon') {
       scene.resize();
-      if (from?.view === 'map')
-        document.querySelector<HTMLButtonElement>(`#pole-links [data-pole="${from.pole}"]`)?.focus();
+      if (from?.view === 'map') document.querySelector<HTMLElement>(`#site-footer [data-pole="${from.pole}"]`)?.focus();
       return;
     }
     if (panel.isOpen()) panel.close();
     const opts = { base: BASE, pole: route.pole, meta: data.maps[route.pole], regions: data.regions };
-    unmount = mountPoleMap(view, {
-      ...opts,
-      onBack: () => (from?.view === 'moon' ? history.back() : location.replace(routeHash({ view: 'moon' }))),
-    }).dispose;
+    back = () => (from?.view === 'moon' ? history.back() : location.replace(routeHash({ view: 'moon' })));
+    unmount = mountPoleMap(view, { ...opts, onBack: back }).dispose;
     view.scrollTop = 0;
     view.querySelector<HTMLButtonElement>('.back')?.focus();
   };

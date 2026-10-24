@@ -18,12 +18,12 @@ export interface PoleMapOptions {
 const STYLE_LABEL: Record<MapStyle, string> = { a: 'Glow', b: 'Bands', d: 'Hotspots' };
 const THEME_LABEL: Record<MapTheme, string> = { dark: 'Dark', moon: 'Moon grey' };
 const MODE_LABEL: Record<MapMode, string> = { '2d': 'Topographic', '3d': '3D terrain' };
-const MODES: readonly MapMode[] = ['2d', '3d'];
+const MODES: readonly MapMode[] = ['3d', '2d'];
 const THEME_BANDS: Record<MapTheme, readonly [string, string, string]> = {
   dark: ['#256abf', '#6da7ec', '#cde2fb'],
   moon: ['#3987e5', '#256abf', '#184f95'],
 };
-const PREF = { style: 'atlas.mapStyle', theme: 'atlas.mapTheme' } as const;
+const PREF = { style: 'atlas.mapStyle', theme: 'atlas.mapTheme.v2' } as const;
 const BAR_PX = 90;
 
 interface Ranked {
@@ -179,7 +179,7 @@ function linkHover(groups: Element[][], onActive: (i: number | null) => void): (
 export function mountPoleMap(root: HTMLElement, opts: PoleMapOptions): { dispose(): void } {
   const { meta, pole } = opts;
   let style = readPref<MapStyle>(PREF.style, meta.styles, 'b');
-  let theme = readPref<MapTheme>(PREF.theme, meta.themes, 'dark');
+  let theme = readPref<MapTheme>(PREF.theme, meta.themes, 'moon');
   const ranked = rank(meta, opts.regions);
   let hover: (i: number | null) => void = () => undefined;
   const map = createMapPane({
@@ -199,13 +199,14 @@ export function mountPoleMap(root: HTMLElement, opts: PoleMapOptions): { dispose
   };
   const back = el('button', { type: 'button', class: 'back' }, svg(ICONS.back), 'Back to Moon');
   back.addEventListener('click', () => opts.onBack());
-  const modes = radios('map-view', 'Map view', MODES, MODE_LABEL, '2d', (v) => {
+  const setMode = (v: MapMode): void => {
     void map.setMode(v).then((ok) => {
       if (ok) return;
       const flat = modes.querySelector<HTMLInputElement>('input[value="2d"]');
       if (flat) flat.checked = true;
     });
-  });
+  };
+  const modes = radios('map-view', 'Map view', MODES, MODE_LABEL, '3d', setMode);
   const controls = el(
     'div',
     { class: 'map-controls' },
@@ -238,6 +239,7 @@ export function mountPoleMap(root: HTMLElement, opts: PoleMapOptions): { dispose
   side.append(el('p', { class: 'note' }, NOTE));
   root.replaceChildren(el('div', { class: 'pole-map' }, map.pane, side));
   update();
+  setMode('3d');
   return {
     dispose: () => {
       map.dispose();

@@ -10,14 +10,13 @@
     <title>Lunar Ice Atlas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@700&family=Tajawal:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div id="stage">
-      <div id="pole-links">
-        <button type="button" data-pole="south">Open South Pole map</button>
-        <button type="button" data-pole="north">Open North Pole map</button>
-      </div>
       <canvas
         id="moon"
         aria-label="Interactive 3D Moon. Drag to rotate, scroll to zoom; the glowing polar caps open the pole maps."
@@ -31,6 +30,7 @@
     </div>
     <aside id="info" aria-label="Project information"></aside>
     <main id="map-view" hidden></main>
+    <footer id="site-footer"></footer>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

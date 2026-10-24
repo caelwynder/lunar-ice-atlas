@@ -27,6 +27,19 @@ test('renders the NASA Moon and switches renders', async ({ page }) => {
   await expect(page.locator('#status')).toBeHidden({ timeout: 60_000 });
 });
 
+test('footer links the poles and the source on GitHub', async ({ page }) => {
+  await openLanding(page);
+  await expect(page.getByRole('link', { name: 'View the source on GitHub' })).toHaveAttribute(
+    'href',
+    'https://github.com/caelwynder/lunar-ice-atlas',
+  );
+  await page.getByRole('link', { name: 'Open North Pole map' }).click();
+  await expect(page).toHaveURL(/#\/north$/);
+  await expect(page.getByRole('link', { name: 'Open North Pole map' })).toBeHidden();
+  await page.locator('.footer-moon').click();
+  await expect(page.locator('#moon')).toBeVisible();
+});
+
 test('info drawer shows the run log and caveats, pushes the Moon left and closes on Escape', async ({ page }) => {
   await openLanding(page);
   const before = (await page.locator('#moon').boundingBox())?.width ?? 0;
@@ -40,20 +53,19 @@ test('info drawer shows the run log and caveats, pushes the Moon left and closes
   await expect(page.getByRole('button', { name: 'Project information' })).toBeFocused();
 });
 
-test('keyboard users reach the South Pole map, switch style and come back', async ({ page }) => {
+test('keyboard users reach the South Pole map from the footer, switch style and come back', async ({ page }) => {
   await openLanding(page);
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Open South Pole map' })).toBeFocused();
+  await page.getByRole('link', { name: 'Open South Pole map' }).focus();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/#\/south$/);
   await expect(page.getByRole('heading', { name: 'Candidate landing regions' })).toBeVisible();
   await expect(page.locator('.region-list tbody tr').first()).toContainText('Slater Plain');
   await page.getByRole('radio', { name: 'Hotspots' }).check();
-  await expect(page.locator('.basemap')).toHaveAttribute('src', /d-dark\.webp$/);
-  await page.getByRole('button', { name: 'Back to Moon' }).click();
+  await expect(page.locator('.basemap')).toHaveAttribute('src', /d-moon\.webp$/);
+  await page.locator('.footer-moon').click();
   await expect(page).toHaveURL(/:\d+\/(#\/)?$/);
   await expect(page.locator('#moon')).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open South Pole map' })).toBeFocused();
+  await expect(page.getByRole('link', { name: 'Open South Pole map' })).toBeFocused();
   await page.goForward();
   await expect(page).toHaveURL(/#\/south$/);
 });
@@ -71,18 +83,19 @@ test('a deep link opens the North Pole map directly', async ({ page }) => {
   await page.goto('/#/north');
   await expect(page.getByRole('heading', { name: 'Predicted ice prospectivity', level: 1 })).toBeVisible();
   await expect(page.locator('.side')).toContainText('of covered area ≥ 0.4');
-  await expect(page.locator('.basemap')).toHaveAttribute('src', /north\/b-dark\.webp$/);
+  await expect(page.locator('.basemap')).toHaveAttribute('src', /north\/b-moon\.webp$/);
 });
 
 test('the South Pole map zooms, pans and loads the sharper basemap', async ({ page }) => {
   await page.goto('/#/south');
+  await page.getByRole('radio', { name: 'Topographic' }).check();
   await expect(page.locator('.badge')).toHaveCount(9);
   await expect(page.locator('.scale span')).toHaveText('100 km');
   const pane = page.locator('.map-pane');
   const box = await pane.boundingBox();
   await page.mouse.move((box?.x ?? 0) + 300, (box?.y ?? 0) + 300);
   for (let i = 0; i < 4; i++) await page.mouse.wheel(0, -200);
-  await expect(page.locator('.basemap')).toHaveAttribute('src', /b-dark@2x\.webp$/, { timeout: 15_000 });
+  await expect(page.locator('.basemap')).toHaveAttribute('src', /b-moon@2x\.webp$/, { timeout: 15_000 });
   await expect(page.locator('.scale span')).not.toHaveText('100 km');
   const before = await page.locator('.map-stage').getAttribute('style');
   await page.mouse.down();
@@ -93,10 +106,9 @@ test('the South Pole map zooms, pans and loads the sharper basemap', async ({ pa
   await expect(page.locator('.scale span')).toHaveText('100 km');
 });
 
-test('the 3D terrain view is optional and draws the regions', async ({ page }) => {
+test('the pole map opens on the 3D terrain and switches to the topographic map', async ({ page }) => {
   await page.goto('/#/south');
-  await expect(page.getByRole('radio', { name: 'Topographic' })).toBeChecked();
-  await page.getByRole('radio', { name: '3D terrain' }).check();
+  await expect(page.getByRole('radio', { name: '3D terrain' })).toBeChecked();
   await expect(page.locator('.map-status')).toBeHidden({ timeout: 30_000 });
   await expect(page.locator('canvas.terrain')).toBeVisible();
   await expect(page.locator('.tbadge:visible')).not.toHaveCount(0);
