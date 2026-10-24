@@ -27,3 +27,8 @@ it('reports missing files as DataError with the url', async () => {
   await expect(loadRegions('/nowhere/')).rejects.toThrow(DataError);
   await expect(loadRegions('/nowhere/')).rejects.toThrow(/nowhere\/data\/regions\.json: HTTP 404/);
 });
+
+it('revalidates data with the server so a new release never pairs with stale cached data', async () => {
+  await loadRegions('/');
+  expect(fetch).toHaveBeenCalledWith('/data/regions.json', { cache: 'no-cache' });
+});
